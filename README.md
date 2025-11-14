@@ -102,8 +102,6 @@ The project timeline spans from July to December and includes:
 - Development  
 - Testing  
 
-(Refer to the proposal document for the full Gantt chart.)
-
 ---
 
 ## 👥 Team & Roles  
@@ -121,9 +119,3 @@ The project timeline spans from July to December and includes:
 
 ---
 
-## 📄 Notes  
-- This repository currently contains **project documentation only**.  
-- Development will be added in future updates.  
-- Technical implementation details will be introduced once development begins.
-
----
