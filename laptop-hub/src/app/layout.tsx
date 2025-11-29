@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import type { Metadata } from "next";
@@ -30,7 +29,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <AuthProvider>
-          <Navbar />
           {children}
           <Toaster />
         </AuthProvider>

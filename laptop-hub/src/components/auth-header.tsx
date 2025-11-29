@@ -9,9 +9,6 @@ export function AuthHeader() {
         </div>
         <span className="text-xl font-bold text-foreground">LaptopHub</span>
       </Link>
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-muted-foreground">Welcome back</span>
-      </div>
     </div>
   );
 }
