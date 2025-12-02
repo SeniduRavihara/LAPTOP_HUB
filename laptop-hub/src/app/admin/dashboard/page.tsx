@@ -1,22 +1,21 @@
 "use client";
 
 import { AdminSidebar } from "@/components/admin-sidebar";
-import { AlertBadge } from "@/components/alert-badge";
 import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Gavel, ShoppingBag, Users } from "lucide-react";
+import { Activity, AlertCircle, DollarSign, Gavel, ShoppingBag, Users } from "lucide-react";
 
 export default function AdminDashboard() {
   const stats = [
-    { title: "Total Users", value: "12,584", change: "+12.5%", icon: Users },
+    { label: "Total Users", value: "12,584", change: "+12.5%", icon: <Users className="w-6 h-6" /> },
     {
-      title: "Active Sellers",
+      label: "Active Sellers",
       value: "1,247",
       change: "+8.2%",
-      icon: ShoppingBag,
+      icon: <ShoppingBag className="w-6 h-6" />,
     },
-    { title: "Revenue", value: "$2.8M", change: "+23.1%", icon: DollarSign },
-    { title: "Active Auctions", value: "342", change: "+15.3%", icon: Gavel },
+    { label: "Revenue", value: "$2.8M", change: "+23.1%", icon: <DollarSign className="w-6 h-6" /> },
+    { label: "Active Auctions", value: "342", change: "+15.3%", icon: <Gavel className="w-6 h-6" /> },
   ];
 
   const recentActivity = [
@@ -48,6 +47,16 @@ export default function AdminDashboard() {
     { name: "EliteGear", sales: "$87K", orders: 156, rating: 4.9 },
     { name: "ComputerBazaar", sales: "$76K", orders: 142, rating: 4.6 },
   ];
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'user': return <Users className="w-5 h-5 text-blue-500" />;
+      case 'seller': return <ShoppingBag className="w-5 h-5 text-green-500" />;
+      case 'report': return <AlertCircle className="w-5 h-5 text-red-500" />;
+      case 'auction': return <Gavel className="w-5 h-5 text-yellow-500" />;
+      default: return <Activity className="w-5 h-5 text-gray-500" />;
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -91,7 +100,9 @@ export default function AdminDashboard() {
                       key={idx}
                       className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
                     >
-                      <AlertBadge type={activity.type as any} />
+                      <div className="mt-1">
+                        {getActivityIcon(activity.type)}
+                      </div>
                       <div className="flex-1">
                         <p className="text-sm text-foreground">
                           {activity.message}

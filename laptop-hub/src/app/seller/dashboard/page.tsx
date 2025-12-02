@@ -9,14 +9,29 @@ import { DollarSign, Package, ShoppingBag, Star } from "lucide-react";
 export default function SellerDashboard() {
   const stats = [
     {
-      title: "Total Sales",
+      label: "Total Sales",
       value: "$124,584",
       change: "+15.3%",
-      icon: DollarSign,
+      icon: <DollarSign className="w-6 h-6" />,
     },
-    { title: "Total Orders", value: "234", change: "+8.7%", icon: ShoppingBag },
-    { title: "Products Listed", value: "48", change: "+4", icon: Package },
-    { title: "Seller Rating", value: "4.8", change: "+0.2", icon: Star },
+    { 
+      label: "Total Orders", 
+      value: "234", 
+      change: "+8.7%", 
+      icon: <ShoppingBag className="w-6 h-6" /> 
+    },
+    { 
+      label: "Products Listed", 
+      value: "48", 
+      change: "+4", 
+      icon: <Package className="w-6 h-6" /> 
+    },
+    { 
+      label: "Seller Rating", 
+      value: "4.8", 
+      change: "+0.2", 
+      icon: <Star className="w-6 h-6" /> 
+    },
   ];
 
   const recentOrders = [

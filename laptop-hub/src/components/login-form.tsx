@@ -30,9 +30,27 @@ export function LoginForm() {
       toast.error(error.message);
       setLoading(false);
     } else {
-      toast.success("Signed in successfully!");
-      router.push("/");
-      router.refresh();
+      // Check user role for redirection
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+          
+        toast.success("Signed in successfully!");
+        
+        if (profile?.role === 'admin') {
+          router.push("/admin/dashboard");
+        } else if (profile?.role === 'seller') {
+          router.push("/seller/dashboard");
+        } else {
+          router.push("/");
+        }
+        router.refresh();
+      }
     }
   };
 

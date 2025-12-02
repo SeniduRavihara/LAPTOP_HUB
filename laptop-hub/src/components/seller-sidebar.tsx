@@ -1,10 +1,14 @@
 'use client'
 
+import { createClient } from '@/lib/supabase/client'
+import { LogOut } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 export function SellerSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
 
   const menuItems = [
     { label: 'Dashboard', href: '/seller/dashboard', icon: 'grid' },
@@ -16,6 +20,12 @@ export function SellerSidebar() {
     { label: 'Analytics', href: '/seller/analytics', icon: 'chart' },
     { label: 'Store Settings', href: '/seller/settings', icon: 'settings' },
   ]
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   const getIcon = (icon: string) => {
     const icons: Record<string, React.ReactNode> = {
@@ -32,8 +42,8 @@ export function SellerSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen fixed left-0 top-0 pt-20 overflow-y-auto">
-      <div className="p-4">
+    <aside className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen fixed left-0 top-0 pt-20 overflow-y-auto flex flex-col">
+      <div className="p-4 flex-1">
         {/* Store Header */}
         <div className="mb-8 pb-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3 mb-3">
@@ -70,6 +80,17 @@ export function SellerSidebar() {
             )
           })}
         </nav>
+      </div>
+      
+      {/* Logout Button */}
+      <div className="p-4 border-t border-sidebar-border">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-red-600 hover:bg-red-50 w-full"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm font-medium">Logout</span>
+        </button>
       </div>
     </aside>
   )

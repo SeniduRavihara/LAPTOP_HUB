@@ -53,7 +53,12 @@ export function SignupForm() {
       setLoading(false);
     } else {
       toast.success("Account created successfully!");
-      router.push("/");
+      
+      if (userRole === 'seller') {
+        router.push("/seller/dashboard");
+      } else {
+        router.push("/");
+      }
       router.refresh();
     }
   };
