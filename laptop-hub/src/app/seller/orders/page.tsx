@@ -1,0 +1,87 @@
+import { Badge } from "@/components/ui/badge"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { createClient } from "@/lib/supabase/server"
+
+export default async function SellerOrdersPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Start building the query
+  // We want to find order items where the product belongs to the seller
+  // Then get the associated order details
+  const { data: orderItems } = await supabase
+    .from("order_items")
+    .select(`
+      *,
+      products!inner(name, seller_id),
+      orders!inner(id, created_at, status, total_amount, customer_id, shipping_address)
+    `)
+    .eq("products.seller_id", user?.id)
+    .order("created_at", { ascending: false })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Sales Orders</h2>
+      </div>
+
+      <div className="rounded-md border bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Product</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Total Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderItems?.map((item) => {
+               // Type assertions query result
+               const product = item.products as unknown as { name: string }
+               const order = item.orders as unknown as { 
+                 id: string, 
+                 status: string, 
+                 created_at: string,
+                 shipping_address?: any
+               }
+
+               const formattedDate = new Date(order.created_at).toLocaleDateString()
+
+              return (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell>${item.total_price}</TableCell>
+                   <TableCell>
+                    <Badge variant={order.status === 'delivered' ? 'default' : 'secondary'}>
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formattedDate}</TableCell>
+                </TableRow>
+              )
+            })}
+             {orderItems?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center h-24">
+                  No orders found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}

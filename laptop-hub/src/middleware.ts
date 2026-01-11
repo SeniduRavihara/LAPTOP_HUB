@@ -51,14 +51,14 @@ export async function middleware(request: NextRequest) {
     const role = user.user_metadata?.role || 'customer'
 
     // Admin routes protection
-    if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+    // if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
+    //   return NextResponse.redirect(new URL('/', request.url))
+    // }
 
     // Seller routes protection
-    if (request.nextUrl.pathname.startsWith('/seller') && role !== 'seller' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+    // if (request.nextUrl.pathname.startsWith('/seller') && role !== 'seller' && role !== 'admin') {
+    //   return NextResponse.redirect(new URL('/', request.url))
+    // }
 
     // Redirect logged in users away from auth pages
     if (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup')) {

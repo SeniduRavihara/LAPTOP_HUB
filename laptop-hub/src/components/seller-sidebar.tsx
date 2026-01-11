@@ -42,7 +42,7 @@ export function SellerSidebar() {
   }
 
   return (
-    <aside className="w-64 bg-sidebar border-r border-sidebar-border min-h-screen fixed left-0 top-0 pt-20 overflow-y-auto flex flex-col">
+    <aside className="w-64 bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 pt-20 overflow-y-auto flex flex-col">
       <div className="p-4 flex-1">
         {/* Store Header */}
         <div className="mb-8 pb-4 border-b border-sidebar-border">
