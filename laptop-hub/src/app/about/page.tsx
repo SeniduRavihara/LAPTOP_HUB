@@ -7,11 +7,11 @@ export default function AboutPage() {
 		<div className='min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100'>
 			<Navbar />
 			
-			{/* About TechHub Hero Section */}
+			{/* About LaptopHub Hero Section */}
 			<div className="relative min-h-[400px] flex flex-col items-center justify-center text-center overflow-hidden" style={{background: "url('https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1200&auto=format&fit=crop') center/cover no-repeat"}}>
 				<div className="absolute inset-0 bg-[#0A1E5B]/80" />
 				<div className="relative z-10 py-24 w-full flex flex-col items-center justify-center">
-					<h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">About TechHub</h1>
+					<h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">About LaptopHub</h1>
 					<p className="text-xl text-white/95 max-w-2xl mx-auto">Your Premier Destination for Cutting-Edge Technology</p>
 				</div>
 			</div>
@@ -29,11 +29,11 @@ export default function AboutPage() {
 								<h2 className='text-3xl font-bold text-[#0A1E5B]'>Who We Are</h2>
 							</div>
 							<p className='text-gray-700 text-lg leading-relaxed mb-4'>
-								Welcome to <span className='font-semibold text-[#0A1E5B]'>TechHub</span>, your premier destination for high-quality laptops and computer accessories. 
+								Welcome to <span className='font-semibold text-[#0A1E5B]'>LaptopHub</span>, your premier destination for high-quality laptops and computer accessories. 
 								We are committed to providing the latest technology solutions to meet all your computing needs.
 							</p>
 							<p className='text-gray-700 text-lg leading-relaxed'>
-								Founded with a passion for technology and customer satisfaction, TechHub has grown to become 
+								Founded with a passion for technology and customer satisfaction, LaptopHub has grown to become 
 								a trusted name in the laptop retail industry. We offer a carefully curated selection of laptops 
 								from leading brands including <span className='font-semibold'>Dell, HP, Lenovo, ASUS, MSI</span>, and more.
 							</p>
@@ -108,7 +108,7 @@ export default function AboutPage() {
 							<div className='absolute inset-0 bg-gradient-to-t from-[#0A1E5B]/20 to-transparent z-10'></div>
 							<Image
 								src='./msi-gaming-laptop.jpg'
-								alt='Gaming Laptop - TechHub'
+								alt='Gaming Laptop - LaptopHub'
 								fill
 								className='object-cover'
 								priority
