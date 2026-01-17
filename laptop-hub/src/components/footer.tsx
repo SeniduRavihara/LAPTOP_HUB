@@ -18,7 +18,7 @@ export function Footer() {
 							<p className="text-lg font-semibold text-gray-400">+94 444 555 666</p>
 						</div>
 						<div className="mb-6">
-							<p className="text-sm font-semibold mb-2">TechHub (Pvt) Ltd.</p>
+							<p className="text-sm font-semibold mb-2">LaptopHub (Pvt) Ltd.</p>
 							<p className="text-sm text-gray-400">#40,Sri Jayewardenepura Kotte. Sri Lanka.</p>
 						</div>
 						<div className="mb-6">
@@ -115,3 +115,4 @@ export function Footer() {
 		</footer>
 	)
 }
+
