@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button'
 export function ProductFilters() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     brand: true,
+    category: true,
     price: true,
     processor: true,
     ram: true,
   })
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -57,6 +59,44 @@ export function ProductFilters() {
       <h3 className="font-semibold text-foreground mb-4">Filters</h3>
 
       {filterSection('Brand', ['Dell', 'HP', 'Lenovo', 'Apple', 'ASUS', 'MSI'])}
+      
+      {/* Category Section */}
+      <div className="border-b border-border py-4">
+        <button
+          onClick={() => toggleSection('category')}
+          className="flex items-center justify-between w-full text-sm font-semibold text-foreground mb-3 hover:text-primary transition-colors"
+        >
+          Category
+          <svg
+            className={`w-4 h-4 transition-transform ${expandedSections.category ? '' : '-rotate-90'}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </button>
+        {expandedSections.category && (
+          <div className="space-y-2">
+            {['Business', 'Consumer', 'Gaming'].map(category => (
+              <label key={category} className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="radio"
+                  name="category"
+                  value={category}
+                  checked={selectedCategory === category}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                  {category}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
       {filterSection('Processor', ['Intel Core i5', 'Intel Core i7', 'AMD Ryzen 5', 'AMD Ryzen 7', 'Apple M1'])}
       {filterSection('RAM', ['8GB', '16GB', '32GB', '64GB+'])}
 
