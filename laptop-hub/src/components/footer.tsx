@@ -103,7 +103,7 @@ export function Footer() {
 				{/* Bottom Section */}
 				<div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center">
 					<p className="text-sm text-gray-400 mb-4 md:mb-0">
-						Copyright © 2025 TechHub.lk. All rights reserved.
+						Copyright © 2025 LaptopHub.lk. All rights reserved.
 					</p>
 					<div className="flex gap-2">
 						<img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa" className="h-8 bg-white rounded px-2 py-1" />
@@ -115,4 +115,5 @@ export function Footer() {
 		</footer>
 	)
 }
+
 
