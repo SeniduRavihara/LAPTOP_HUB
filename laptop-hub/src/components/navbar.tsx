@@ -74,10 +74,10 @@ export function Navbar() {
 					{/* Logo */}
 					<Link href='/' className='flex items-center gap-2 flex-shrink-0'>
 						<div className='w-10 h-10 bg-[#0A1E5B] rounded-lg flex items-center justify-center'>
-							<span className='text-white font-bold text-lg'>T</span>
+							<span className='text-white font-bold text-lg'>L</span>
 						</div>
 						<span className='text-xl font-bold text-gray-900'>
-							TechHub
+							LaptopHub
 						</span>
 					</Link>
 
