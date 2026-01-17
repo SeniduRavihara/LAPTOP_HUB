@@ -1,0 +1,1109 @@
+/* app/account/account.module.css */
+
+/* ============================================
+   ACCOUNT PAGE STYLES - WIREFRAME DESIGN
+   ============================================ */
+
+.accountPage {
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+}
+
+/* Account Container with Sidebar Layout */
+.accountContainer {
+  display: flex;
+  gap: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: calc(100vh - 200px);
+}
+
+/* Left Sidebar */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0;
+  padding: 1.5rem 0;
+  height: 100%;
+  min-height: calc(100vh - 200px);
+  position: sticky;
+  top: 0;
+}
+
+.sidebarHeader {
+  text-align: left;
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sidebarAvatar {
+  width: 50px;
+  height: 50px;
+  margin: 0;
+}
+
+.avatarFallback {
+  background-color: #1e3a8a;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sidebarName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.125rem;
+}
+
+.sidebarEmail {
+  font-size: 0.875rem;
+  color: #3b82f6;
+}
+
+.sidebarNav {
+  padding: 1.5rem 1rem;
+}
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border-radius: 8px;
+}
+
+.sidebarItem:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.sidebarItemActive {
+  background-color: #1e3a8a;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebarItemActive::before {
+  display: none;
+}
+
+.sidebarItemActive:hover {
+  background-color: #1e40af;
+  color: #ffffff;
+}
+
+.sidebarIcon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* Main Content Area */
+.mainContent {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 3rem;
+  background-color: #f5f5f5;
+}
+
+.contentHeader {
+  margin-bottom: 2rem;
+}
+
+.contentTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.contentSubtitle {
+  font-size: 0.9375rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Tabs */
+.contentTabs {
+  width: 100%;
+}
+
+.tabsList {
+  width: 100%;
+  justify-content: flex-start;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tabContent {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Profile Card */
+.profileCard {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+}
+
+.profileCardContent {
+  padding: 2rem;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.profileAvatar {
+  width: 80px;
+  height: 80px;
+}
+
+.profileAvatarFallback {
+  background-color: hsl(var(--muted));
+  font-size: 2rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+.profileName {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.25rem;
+}
+
+.profileEmail {
+  font-size: 0.9375rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.editIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.profileForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.statCard {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.statCardContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  padding: 0.75rem;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  color: #666666;
+}
+
+.statInfo {
+  flex: 1;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.5rem;
+}
+
+.statValue {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+/* Content Card */
+.contentCard {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.cardDescription {
+  font-size: 0.9375rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1rem;
+}
+
+.emptyText {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Security Form */
+.securityForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .accountContainer {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
+  
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  .tabsList {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .profileHeader {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+}
+
+
+@media (min-width: 1024px) {
+  .accountGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================
+   SIDEBAR STYLES
+   ============================================ */
+
+.sidebar {
+  grid-column: span 1;
+  height: fit-content;
+  background: white
+  ;
+  border: 1px solid rgb(21, 39, 58);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-radius: 0.5rem;
+
+}
+:global(.dark) .sidebar {
+  background: linear-gradient(to bottom right,
+    rgb(15 23 42),
+    rgb(23 37 84),
+    rgb(30 41 59)
+  );
+  border-color: rgb(32, 35, 45);
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    grid-column: span 1;
+  }
+}
+
+.sidebarContent {
+  padding: 1rem;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Sidebar Button */
+.sidebarButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebarButton:hover {
+  background-color: var(--accent);
+}
+
+.sidebarButtonActive {
+  background-color: var(--accent);
+}
+
+.sidebarIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.logoutButton {
+  color: var(--destructive);
+}
+
+.logoutButton:hover {
+  background-color: rgb(239 68 68 / 0.1);
+}
+
+.sidebarSeparator {
+  margin: 0.5rem 0;
+  height: 1px;
+  background-color: var(--border);
+}
+
+/* ============================================
+   MAIN CONTENT STYLES
+   ============================================ */
+
+.mainContent {
+  grid-column: span 1;
+}
+
+@media (min-width: 1024px) {
+  .mainContent {
+    grid-column: span 3;
+  }
+}
+
+.contentTabs {
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+
+.gradientCard {
+  background: linear-gradient(to bottom right,
+    rgb(239 246 255),
+    rgb(224 231 255),
+    rgb(191 219 254)
+  );
+  border: 1px solid rgb(147 197 253);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-radius: 0.5rem;
+}
+
+:global(.dark) .gradientCard {
+  background: linear-gradient(to bottom right,
+    rgb(15 23 42),
+    rgb(23 37 84),
+    rgb(30 41 59)
+  );
+  border-color: rgb(29 78 216);
+}
+
+/* Header Row */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Profile Section */
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .profileSection {
+    flex-direction: row;
+  }
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatarIcon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--muted-foreground);
+}
+
+/* Profile Form */
+.profileForm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .formRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inputIcon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   STATS CARDS
+   ============================================ */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .statsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.statCard {
+  transition: all 0.3s;
+}
+
+.statCard:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  transform: scale(1.05);
+}
+
+.statContent {
+  padding-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.statIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   ORDER STYLES
+   ============================================ */
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.orderCard {
+  padding-top: 1.5rem;
+}
+
+.orderContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .orderContent {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.orderDetails {
+  flex: 1;
+}
+
+.orderHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.orderTitle {
+  font-weight: 600;
+}
+
+.orderDate {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+}
+
+.productList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.productItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.productImage {
+  width: 3rem;
+  height: 3rem;
+  background-color: var(--muted);
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.productImageIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--muted-foreground);
+}
+
+.productInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.productName {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.productQuantity {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.orderTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.totalAmount {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Status Badges */
+.statusDelivered {
+  background-color: rgb(220 252 231);
+  color: rgb(22 101 52);
+}
+
+:global(.dark) .statusDelivered {
+  background-color: rgb(20 83 45 / 0.3);
+  color: rgb(134 239 172);
+}
+
+.statusInTransit {
+  background-color: rgb(219 234 254);
+  color: rgb(30 64 175);
+}
+
+:global(.dark) .statusInTransit {
+  background-color: rgb(30 58 138 / 0.3);
+  color: rgb(147 197 253);
+}
+
+.statusProcessing {
+  background-color: rgb(254 249 195);
+  color: rgb(133 77 14);
+}
+
+:global(.dark) .statusProcessing {
+  background-color: rgb(133 77 14 / 0.3);
+  color: rgb(253 224 71);
+}
+
+/* ============================================
+   ADDRESS STYLES
+   ============================================ */
+
+.addressGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .addressGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.addressCard {
+  padding-top: 1.5rem;
+}
+
+.addressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.addressBadges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addressActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.addressName {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.addressLine {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   WISHLIST STYLES
+   ============================================ */
+
+.wishlistGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .wishlistGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .wishlistGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.wishlistCard {
+  padding-top: 1.5rem;
+}
+
+.wishlistImage {
+  aspect-ratio: 1;
+  background-color: var(--muted);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wishlistImageIcon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--muted-foreground);
+}
+
+.wishlistTitle {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wishlistPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.wishlistPrice {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.discountBadge {
+  background-color: rgb(254 226 226);
+  color: rgb(153 27 27);
+}
+
+:global(.dark) .discountBadge {
+  background-color: rgb(127 29 29 / 0.3);
+  color: rgb(252 165 165);
+}
+
+/* ============================================
+   SECURITY STYLES
+   ============================================ */
+
+.securitySection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.passwordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 28rem;
+}
+
+.twoFactorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.twoFactorInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.twoFactorIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.twoFactorStatus {
+  display: flex;
+  flex-direction: column;
+}
+
+.twoFactorLabel {
+  font-weight: 500;
+}
+
+.twoFactorValue {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* Notification Preferences */
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notificationItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notificationInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.notificationLabel {
+  font-weight: 500;
+}
+
+.notificationDescription {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* ============================================
+   PAYMENT METHODS STYLES
+   ============================================ */
+
+.paymentList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.paymentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paymentInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.paymentIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--muted-foreground);
+}
+
+.paymentDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.paymentCard {
+  font-weight: 500;
+}
+
+.paymentExpiry {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   ICON STYLES
+   ============================================ */
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconSm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconMd {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconLg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.fullWidth {
+  width: 100%;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.mt4 {
+  margin-top: 1rem;
+}
+
+.mt2 {
+  margin-top: 0.5rem;
+}
+
+.mr2 {
+  margin-right: 0.5rem;
+}
+
+.px0 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.textDestructive {
+  color: var(--destructive);
+}
+
+.textDestructive:hover {
+  color: var(--destructive);
+}
+
+.bgPrimaryLight {
+  background-color: rgb(var(--primary) / 0.1);
+  color: var(--primary);
+}
+
+.textPrimary {
+  color: var(--primary);
+}
