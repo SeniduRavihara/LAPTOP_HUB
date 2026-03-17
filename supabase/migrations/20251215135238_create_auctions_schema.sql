@@ -3,7 +3,7 @@ create type public.auction_status as enum ('active', 'completed', 'cancelled');
 
 -- Create auctions table
 create table public.auctions (
-  id uuid not null default gen_random_uuid(),
+  id uuid not null default gen_random_uuid() primary key,
   product_id uuid references public.products(id) on delete cascade not null,
   seller_id uuid references auth.users(id) on delete cascade not null,
   start_time timestamp with time zone not null,
