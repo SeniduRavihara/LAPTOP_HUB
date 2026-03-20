@@ -5,7 +5,7 @@ import { SidebarProvider, useSidebar } from '@/components/providers/sidebar-prov
 function AdminMain({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()
   return (
-    <main className={`flex-1 overflow-y-auto transition-all duration-300 ${isCollapsed ? 'pl-20' : 'pl-64'}`}>
+    <main className={`flex-1 overflow-y-auto scrollbar-custom transition-all duration-300 ${isCollapsed ? 'pl-20' : 'pl-64'}`}>
       <div className="container mx-auto p-8">
         {children}
       </div>
@@ -20,7 +20,7 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background overflow-hidden">
+      <div className="fixed inset-0 flex w-full bg-background overflow-hidden">
         <AdminSidebar />
         <AdminMain>{children}</AdminMain>
       </div>

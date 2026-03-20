@@ -2,13 +2,14 @@
 
 import { createClient } from "@/lib/supabase/client"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Plus, Trash2, Upload, X } from "lucide-react"
+import { CalendarIcon, Loader2, Plus, Trash2, Upload, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import {
     Form,
     FormControl,
@@ -19,8 +20,18 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 import { toast } from "sonner"
+
+const numericOptional = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? null : val),
+  z.coerce.number().nullable().optional()
+);
 
 const productSchema = z.object({
   name: z.string().min(2, {
@@ -29,20 +40,25 @@ const productSchema = z.object({
   brand: z.string().min(2, {
     message: "Brand must be at least 2 characters.",
   }),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   price: z.coerce.number().min(0, {
     message: "Price must be a positive number.",
   }),
-  original_price: z.coerce.number().optional().nullable(),
+  original_price: numericOptional,
   stock: z.coerce.number().int().min(0, {
     message: "Stock must be a non-negative integer.",
   }),
-  badge: z.string().optional(),
+  badge: z.string().optional().nullable(),
   images: z.array(z.string()).default([]),
   specs: z.array(z.object({
     key: z.string().min(1, "Key is required"),
     value: z.string().min(1, "Value is required")
   })).default([]),
+  isAuction: z.boolean().default(false),
+  starting_bid: z.coerce.number().min(0).optional(),
+  reserve_price: numericOptional,
+  start_time: z.date().optional().nullable(),
+  end_time: z.date().optional().nullable(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -63,21 +79,34 @@ export function ProductForm({ initialData }: Props) {
     resolver: zodResolver(productSchema),
     defaultValues: initialData ? {
       ...initialData,
+      description: initialData.description ?? "",
+      original_price: initialData.original_price ?? "",
+      badge: initialData.badge ?? "",
       images: initialData.images || [],
-      specs: Object.entries(initialData.specs || {}).map(([key, value]) => ({
+      specs: initialData.specs ? Object.entries(initialData.specs).map(([key, value]) => ({
         key,
         value: String(value)
-      }))
+      })) : [],
+      isAuction: !!initialData.auction && (Array.isArray(initialData.auction) ? initialData.auction.length > 0 : true),
+      starting_bid: (Array.isArray(initialData.auction) ? initialData.auction[0]?.starting_bid : initialData.auction?.starting_bid) ?? 0,
+      reserve_price: (Array.isArray(initialData.auction) ? initialData.auction[0]?.reserve_price : initialData.auction?.reserve_price) ?? "",
+      start_time: (Array.isArray(initialData.auction) ? (initialData.auction[0]?.start_time ? new Date(initialData.auction[0].start_time) : null) : (initialData.auction?.start_time ? new Date(initialData.auction.start_time) : null)),
+      end_time: (Array.isArray(initialData.auction) ? (initialData.auction[0]?.end_time ? new Date(initialData.auction[0].end_time) : null) : (initialData.auction?.end_time ? new Date(initialData.auction.end_time) : null)),
     } : {
       name: "",
       brand: "",
       description: "",
       price: 0,
-      original_price: null,
+      original_price: "",
       stock: 0,
       badge: "",
       images: [],
       specs: [],
+      isAuction: false,
+      starting_bid: 0,
+      reserve_price: "",
+      start_time: null,
+      end_time: null,
     },
   })
 
@@ -172,15 +201,17 @@ export function ProductForm({ initialData }: Props) {
       const productData = {
         name: data.name,
         brand: data.brand,
-        description: data.description,
+        description: data.description || null,
         price: data.price,
         original_price: data.original_price,
         stock: data.stock,
-        badge: data.badge,
+        badge: data.badge || null,
         images: data.images,
         specs: specsObject,
         seller_id: user.id,
       }
+
+      let productId = initialData?.id
 
       if (initialData) {
         // Update existing product
@@ -190,20 +221,64 @@ export function ProductForm({ initialData }: Props) {
           .eq("id", initialData.id)
 
         if (error) throw error
-        toast.success("Product updated successfully")
       } else {
         // Create new product
-        const { error } = await supabase.from("products").insert(productData)
+        const { data: newProduct, error } = await supabase
+          .from("products")
+          .insert(productData)
+          .select()
+          .single()
 
         if (error) throw error
-        toast.success("Product created successfully")
+        productId = newProduct.id
       }
 
+      // Handle Auction creation/update
+      if (data.isAuction) {
+        console.log("Creating/Updating auction for product:", productId)
+        const auctionData = {
+          product_id: productId,
+          seller_id: user.id,
+          starting_bid: data.starting_bid,
+          reserve_price: data.reserve_price,
+          start_time: data.start_time?.toISOString(),
+          end_time: data.end_time?.toISOString(),
+          status: 'active'
+        }
+
+        const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
+
+        if (existingAuction) {
+          console.log("Updating existing auction:", existingAuction.id)
+          const { error } = await supabase
+            .from("auctions")
+            .update(auctionData)
+            .eq("id", existingAuction.id)
+          if (error) throw error
+        } else {
+          console.log("Inserting new auction")
+          const { error } = await supabase
+            .from("auctions")
+            .insert(auctionData)
+          if (error) throw error
+        }
+      } else {
+        const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
+        if (existingAuction) {
+          console.log("Cancelling existing auction:", existingAuction.id)
+          await supabase
+            .from("auctions")
+            .update({ status: 'cancelled' })
+            .eq("id", existingAuction.id)
+        }
+      }
+
+      toast.success(initialData ? "Product updated successfully" : "Product created successfully")
       router.push("/admin/products")
       router.refresh()
-    } catch (error) {
-      console.error(error)
-      toast.error("Something went wrong. Please try again.")
+    } catch (error: any) {
+      console.error("Full submission error details:", error)
+      toast.error(error.message || "Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -220,7 +295,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem className="md:col-span-3">
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Product Name" {...field} />
+                  <Input placeholder="Product Name" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -233,7 +308,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem>
                 <FormLabel>Brand</FormLabel>
                 <FormControl>
-                  <Input placeholder="Brand (e.g. ASUS, Apple)" {...field} />
+                  <Input placeholder="Brand (e.g. ASUS, Apple)" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -246,7 +321,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem>
                 <FormLabel>Price (LKR)</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0.00" step="0.01" {...field} />
+                  <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? 0} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -264,7 +339,7 @@ export function ProductForm({ initialData }: Props) {
                     placeholder="0.00" 
                     step="0.01" 
                     {...field} 
-                    value={field.value || ""} 
+                    value={field.value ?? ""} 
                   />
                 </FormControl>
                 <FormDescription>Used to show discounts (e.g. Strike through price)</FormDescription>
@@ -279,7 +354,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem>
                 <FormLabel>Stock Quantity</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
+                  <Input type="number" placeholder="0" {...field} value={field.value ?? 0} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -292,7 +367,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem className="md:col-span-2">
                 <FormLabel>Badge (Optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. New, Sale, Hot" {...field} />
+                  <Input placeholder="e.g. New, Sale, Hot" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormDescription>A small badge displayed on the product card</FormDescription>
                 <FormMessage />
@@ -310,6 +385,7 @@ export function ProductForm({ initialData }: Props) {
                     placeholder="Tell customers about this laptop..."
                     className="min-h-[120px]"
                     {...field}
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -340,7 +416,7 @@ export function ProductForm({ initialData }: Props) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input placeholder="Label (e.g. RAM)" {...field} />
+                      <Input placeholder="Label (e.g. RAM)" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -352,7 +428,7 @@ export function ProductForm({ initialData }: Props) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input placeholder="Value (e.g. 16GB)" {...field} />
+                      <Input placeholder="Value (e.g. 16GB)" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -419,7 +495,154 @@ export function ProductForm({ initialData }: Props) {
           </FormDescription>
         </div>
 
-        <Button type="submit" disabled={isLoading || isUploading}>
+        <Separator />
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <FormLabel className="text-base">Auction Settings</FormLabel>
+              <FormDescription>
+                Enable this to list this product for auction.
+              </FormDescription>
+            </div>
+            <FormField
+              control={form.control}
+              name="isAuction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {form.watch("isAuction") && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg bg-muted/20">
+              <FormField
+                control={form.control}
+                name="starting_bid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Starting Bid (LKR)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? 0} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="reserve_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reserve Price (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00" 
+                        step="0.01" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                      />
+                    </FormControl>
+                    <FormDescription>Minimum price to win the auction</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="start_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Start Time</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="end_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>End Time</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date <= (form.getValues("start_time") || new Date())
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+        </div>
+
+        <Button type="submit" disabled={isLoading || isUploading} className="w-full md:w-auto">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

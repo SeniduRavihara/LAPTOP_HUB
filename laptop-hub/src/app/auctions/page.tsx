@@ -1,5 +1,3 @@
-"use client";
-
 import { AuctionCard } from "@/components/auction-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,83 +8,56 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Loader2, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function AuctionsPage() {
-  const auctions = [
-    {
-      id: "1",
-      name: "Dell XPS 15 - i7 16GB",
-      brand: "Dell",
-      image: "/placeholder.svg?key=1",
-      currentBid: 1250,
-      numberOfBids: 23,
-      timeLeft: "2h 34m",
-      condition: "Like New",
-      rating: 4.8,
-      seller: "TechStore_Pro",
-    },
-    {
-      id: "2",
-      name: 'MacBook Pro 14" M3',
-      brand: "Apple",
-      image: "/placeholder.svg?key=2",
-      currentBid: 1850,
-      numberOfBids: 45,
-      timeLeft: "4h 12m",
-      condition: "New",
-      rating: 4.9,
-      seller: "Apple_Reseller",
-    },
-    {
-      id: "3",
-      name: "ASUS ROG Strix G15",
-      brand: "ASUS",
-      image: "/placeholder.svg?key=3",
-      currentBid: 950,
-      numberOfBids: 18,
-      timeLeft: "1h 45m",
-      condition: "Good",
-      rating: 4.5,
-      seller: "Gamer_Zone",
-    },
-    {
-      id: "4",
-      name: "Lenovo ThinkPad X1 Carbon",
-      brand: "Lenovo",
-      image: "/placeholder.svg?key=4",
-      currentBid: 1100,
-      numberOfBids: 31,
-      timeLeft: "3h 20m",
-      condition: "Like New",
-      rating: 4.7,
-      seller: "Biz_Laptops",
-    },
-    {
-      id: "5",
-      name: "MSI Gaming Laptop",
-      brand: "MSI",
-      image: "/placeholder.svg?key=5",
-      currentBid: 2100,
-      numberOfBids: 12,
-      timeLeft: "5h 50m",
-      condition: "New",
-      rating: 4.6,
-      seller: "Pro_Gaming",
-    },
-    {
-      id: "6",
-      name: "HP Spectre x360",
-      brand: "HP",
-      image: "/placeholder.svg?key=6",
-      currentBid: 1450,
-      numberOfBids: 27,
-      timeLeft: "6h 15m",
-      condition: "Like New",
-      rating: 4.8,
-      seller: "Premium_Tech",
-    },
-  ];
+  const [auctions, setAuctions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchAuctions() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("auctions")
+          .select(`
+            *,
+            products (*),
+            bids (amount)
+          `)
+          .eq("status", "active")
+          .order("end_time", { ascending: true });
+
+        if (error) throw error;
+
+        const formattedAuctions = data.map((auction: any) => {
+          const maxBid = auction.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
+          return {
+            id: auction.id,
+            name: auction.products.name,
+            brand: auction.products.brand,
+            image: auction.products.images?.[0] || "/placeholder.svg",
+            currentBid: maxBid || auction.starting_bid,
+            numberOfBids: auction.bids.length,
+            endTime: auction.end_time,
+            condition: auction.products.specs?.Condition || "New", // Assuming condition is in specs
+            seller: "TechStore_Pro", // Placeholder or fetch seller name
+          };
+        });
+
+        setAuctions(formattedAuctions);
+      } catch (error) {
+        console.error("Error fetching auctions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAuctions();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,11 +119,17 @@ export default function AuctionsPage() {
         </div>
 
         {/* Auctions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {auctions.map((auction) => (
-            <AuctionCard key={auction.id} {...auction} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {auctions.map((auction) => (
+              <AuctionCard key={auction.id} {...auction} />
+            ))}
+          </div>
+        )}
 
         {/* Load More */}
         <div className="mt-12 text-center">

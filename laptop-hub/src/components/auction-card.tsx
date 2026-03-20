@@ -12,7 +12,7 @@ interface AuctionCardProps {
   image: string;
   currentBid: number;
   numberOfBids: number;
-  timeLeft: string;
+  endTime: string;
   rating: number;
   seller: string;
 }
@@ -24,14 +24,15 @@ export function AuctionCard({
   image,
   currentBid,
   numberOfBids,
-  timeLeft,
+  endTime,
   rating,
   seller,
 }: AuctionCardProps) {
   const [isWatching, setIsWatching] = useState(false);
-
+  const timeLeft = new Date(endTime).toLocaleDateString(); // Simple placeholder
+  
   return (
-    <Link href={`/auction/${id}`}>
+    <Link href={`/auctions/${id}`}>
       <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col">
         {/* Image Container */}
         <div className="relative w-full h-48 bg-secondary overflow-hidden">
@@ -78,7 +79,7 @@ export function AuctionCard({
           <div className="border-t border-border pt-3 mb-3">
             <p className="text-xs text-muted-foreground mb-1">Current Bid</p>
             <p className="text-xl font-bold text-primary mb-1">
-              ${currentBid.toLocaleString()}
+              LKR {currentBid.toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground">
               {numberOfBids} bids placed

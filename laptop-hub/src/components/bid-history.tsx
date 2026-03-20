@@ -1,62 +1,36 @@
-export function BidHistory() {
-  const bids = [
-    {
-      id: 1,
-      bidder: 'TechLover2024',
-      amount: 1450,
-      time: '2 hours ago',
-      status: 'highest',
-    },
-    {
-      id: 2,
-      bidder: 'LaptopHunter',
-      amount: 1400,
-      time: '3 hours ago',
-      status: 'normal',
-    },
-    {
-      id: 3,
-      bidder: 'GadgetFan',
-      amount: 1350,
-      time: '5 hours ago',
-      status: 'normal',
-    },
-    {
-      id: 4,
-      bidder: 'TechEnthusiast99',
-      amount: 1299,
-      time: '1 day ago',
-      status: 'normal',
-    },
-  ]
+export function BidHistory({ bids }: { bids: any[] }) {
+  const sortedBids = [...(bids || [])].sort((a, b) => b.amount - a.amount);
 
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       <h3 className="text-lg font-semibold text-foreground mb-4">Bid History</h3>
       <div className="space-y-4">
-        {bids.map((bid) => (
+        {sortedBids.map((bid, index) => (
           <div
             key={bid.id}
             className={`flex items-center justify-between p-3 rounded-lg ${
-              bid.status === 'highest' ? 'bg-accent/10 border border-accent' : 'bg-secondary'
+              index === 0 ? 'bg-accent/10 border border-accent' : 'bg-secondary'
             }`}
           >
             <div>
-              <p className={`font-medium text-sm ${bid.status === 'highest' ? 'text-accent' : 'text-foreground'}`}>
-                {bid.bidder}
+              <p className={`font-medium text-sm ${index === 0 ? 'text-accent' : 'text-foreground'}`}>
+                User_{bid.bidder_id.substring(0, 5)}
               </p>
-              <p className="text-xs text-muted-foreground">{bid.time}</p>
+              <p className="text-xs text-muted-foreground">{new Date(bid.created_at).toLocaleString()}</p>
             </div>
             <div>
-              <p className={`font-bold text-lg ${bid.status === 'highest' ? 'text-accent' : 'text-primary'}`}>
-                ${bid.amount.toLocaleString()}
+              <p className={`font-bold text-lg ${index === 0 ? 'text-accent' : 'text-primary'}`}>
+                LKR {bid.amount.toLocaleString()}
               </p>
-              {bid.status === 'highest' && (
+              {index === 0 && (
                 <p className="text-xs text-accent font-semibold text-right">Highest Bid</p>
               )}
             </div>
           </div>
         ))}
+        {sortedBids.length === 0 && (
+          <p className="text-center text-muted-foreground py-4">No bids yet. Be the first to bid!</p>
+        )}
       </div>
     </div>
   )

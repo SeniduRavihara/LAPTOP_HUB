@@ -17,7 +17,7 @@ export default async function SellerEditProductPage({
 
   const { data: product } = await supabase
     .from("products")
-    .select("*")
+    .select("*, auction:auctions(*)")
     .eq("id", id)
     .single()
 
@@ -34,7 +34,7 @@ export default async function SellerEditProductPage({
   // Transform data for the form
   const formattedProduct = {
     ...product,
-    images: product.images ? product.images.join(", ") : "",
+    images: product.images || [],
   }
 
   return (

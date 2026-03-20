@@ -4,61 +4,138 @@ import { BidHistory } from "@/components/bid-history";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Clock, Eye, Gavel, MapPin } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Clock, Eye, Gavel, Loader2, MapPin } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function AuctionDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [auction, setAuction] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isBidding, setIsBidding] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [isWatching, setIsWatching] = useState(false);
+  
+  const supabase = createClient();
 
-  const auction = {
-    id: 1,
-    name: "Dell XPS 15 - Premium Laptop",
-    brand: "Dell",
-    condition: "Like New",
-    currentBid: 1250,
-    minIncrement: 25,
-    totalBids: 23,
-    timeLeft: "2h 34m 15s",
-    endTime: new Date(
-      Date.now() + 2 * 60 * 60 * 1000 + 34 * 60 * 1000
-    ).toISOString(),
-    watchers: 47,
-    seller: {
-      name: "TechStore_Pro",
-      rating: 4.8,
-      totalSales: 342,
-      location: "New York, NY",
-    },
-    images: [
-      "/placeholder.svg?key=1",
-      "/placeholder.svg?key=2",
-      "/placeholder.svg?key=3",
-      "/placeholder.svg?key=4",
-    ],
-    description:
-      "Premium Dell XPS 15 laptop in like-new condition. Barely used, still under warranty. Perfect for professionals and students.",
-    specs: [
-      { label: "Processor", value: "Intel Core i7-12700H" },
-      { label: "RAM", value: "16GB DDR5" },
-      { label: "Storage", value: "512GB NVMe SSD" },
-      { label: "Display", value: '15.6" FHD (1920x1080)' },
-      { label: "Graphics", value: "NVIDIA RTX 3050 Ti" },
-      { label: "Battery", value: "Up to 10 hours" },
-      { label: "Weight", value: "4.3 lbs" },
-      { label: "Warranty", value: "6 months remaining" },
-    ],
-  };
+  useEffect(() => {
+    async function fetchAuction() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("auctions")
+          .select(`
+            *,
+            products (*),
+            bids (*)
+          `)
+          .eq("id", id)
+          .single();
 
-  const handleBid = () => {
-    if (
-      bidAmount &&
-      parseFloat(bidAmount) >= auction.currentBid + auction.minIncrement
-    ) {
-      console.log("Placing bid:", bidAmount);
+        if (error) throw error;
+        
+        const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
+        setAuction({
+          ...data,
+          currentBid: maxBid || data.starting_bid,
+          totalBids: data.bids.length,
+          specs: Object.entries(data.products.specs || {}).map(([label, value]) => ({ label, value: String(value) })),
+        });
+      } catch (error) {
+        console.error("Error fetching auction:", error);
+        toast.error("Failed to load auction details");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAuction();
+
+    // Subscribe to real-time bid updates
+    const channel = supabase
+      .channel(`auction-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'bids',
+          filter: `auction_id=eq.${id}`
+        },
+        (payload) => {
+          setAuction((prev: any) => {
+            if (!prev) return prev;
+            const newBid = payload.new;
+            return {
+              ...prev,
+              currentBid: Math.max(prev.currentBid, newBid.amount),
+              totalBids: prev.totalBids + 1,
+              bids: [...(prev.bids || []), newBid]
+            };
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
+  const handleBid = async () => {
+    if (!bidAmount) return;
+    const amount = parseFloat(bidAmount);
+    if (isNaN(amount) || amount <= auction.currentBid) {
+      toast.error(`Bid must be higher than current bid of ${auction.currentBid}`);
+      return;
+    }
+
+    setIsBidding(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to place a bid");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("bids")
+        .insert({
+          auction_id: id,
+          bidder_id: user.id,
+          amount: amount,
+        });
+
+      if (error) throw error;
+      toast.success("Bid placed successfully!");
+      setBidAmount("");
+    } catch (error: any) {
+      console.error("Error placing bid:", error);
+      toast.error(error.message || "Failed to place bid");
+    } finally {
+      setIsBidding(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!auction) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-xl text-muted-foreground">Auction not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +153,7 @@ export default function AuctionDetailPage() {
             Auctions
           </a>
           <span>/</span>
-          <span className="text-foreground font-medium">{auction.name}</span>
+          <span className="text-foreground font-medium">{auction.products.name}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -85,8 +162,8 @@ export default function AuctionDetailPage() {
             <div className="bg-secondary border border-border rounded-lg overflow-hidden mb-4">
               <div className="relative w-full h-96">
                 <Image
-                  src={auction.images[0] || "/placeholder.svg"}
-                  alt={auction.name}
+                  src={auction.products.images?.[0] || "/placeholder.svg"}
+                  alt={auction.products.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 66vw"
                   className="object-cover"
@@ -94,7 +171,7 @@ export default function AuctionDetailPage() {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2 mb-8">
-              {auction.images.map((image, idx) => (
+              {(auction.products.images || []).map((image: string, idx: number) => (
                 <div
                   key={idx}
                   className="relative w-full h-20 rounded-lg overflow-hidden border border-border"
@@ -116,14 +193,14 @@ export default function AuctionDetailPage() {
                 Description
               </h2>
               <p className="text-muted-foreground mb-6">
-                {auction.description}
+                {auction.products.description}
               </p>
 
               <h3 className="text-xl font-bold text-foreground mb-4">
                 Specifications
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                {auction.specs.map((spec, idx) => (
+                {(auction.specs || []).map((spec: any, idx: number) => (
                   <div key={idx}>
                     <p className="text-sm text-muted-foreground mb-1">
                       {spec.label}
@@ -139,7 +216,7 @@ export default function AuctionDetailPage() {
               <h2 className="text-2xl font-bold text-foreground mb-6">
                 Bid History
               </h2>
-              <BidHistory />
+              <BidHistory bids={auction.bids || []} />
             </div>
           </div>
 
@@ -148,12 +225,12 @@ export default function AuctionDetailPage() {
             <div className="bg-card border border-border rounded-lg p-6 sticky top-24">
               <div className="mb-6">
                 <h1 className="text-2xl font-bold text-foreground mb-2">
-                  {auction.name}
+                  {auction.products.name}
                 </h1>
                 <div className="flex items-center gap-2 mb-4">
-                  <Badge variant="secondary">{auction.brand}</Badge>
+                  <Badge variant="secondary">{auction.products.brand}</Badge>
                   <Badge className="bg-green-500/10 text-green-600 border border-green-500/20">
-                    {auction.condition}
+                    {auction.products.specs?.Condition || "New"}
                   </Badge>
                 </div>
               </div>
@@ -167,7 +244,7 @@ export default function AuctionDetailPage() {
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-red-600">
-                  {auction.timeLeft}
+                  {new Date(auction.end_time).toLocaleTimeString()} {/* We can add a countdown hook later */}
                 </p>
               </div>
 
@@ -186,7 +263,7 @@ export default function AuctionDetailPage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Eye className="w-4 h-4" />
-                    {auction.watchers} watching
+                    {auction.watchers || 0} watching
                   </span>
                 </div>
               </div>
@@ -194,14 +271,14 @@ export default function AuctionDetailPage() {
               {/* Bid Input */}
               <div className="mb-6">
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Your Bid (minimum ${auction.currentBid + auction.minIncrement}
+                  Your Bid (minimum ${auction.currentBid + 100} {/* Using 100 as default increment */}
                   )
                 </label>
                 <div className="flex gap-2">
                   <Input
                     type="number"
                     placeholder={`$${
-                      auction.currentBid + auction.minIncrement
+                      auction.currentBid + 100
                     }`}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
@@ -209,13 +286,14 @@ export default function AuctionDetailPage() {
                   />
                   <Button
                     onClick={handleBid}
+                    disabled={isBidding}
                     className="bg-primary hover:bg-primary/90"
                   >
-                    Place Bid
+                    {isBidding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Place Bid"}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Minimum increment: ${auction.minIncrement}
+                  Minimum increment: $100
                 </p>
               </div>
 
@@ -237,7 +315,7 @@ export default function AuctionDetailPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Seller</p>
                     <p className="font-semibold text-foreground">
-                      {auction.seller.name}
+                      TechStore_Pro
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -245,7 +323,7 @@ export default function AuctionDetailPage() {
                       <svg
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(auction.seller.rating)
+                          i < 4
                             ? "text-yellow-400"
                             : "text-gray-300"
                         }`}
@@ -256,13 +334,12 @@ export default function AuctionDetailPage() {
                       </svg>
                     ))}
                     <span className="text-sm text-muted-foreground ml-1">
-                      {auction.seller.rating} ({auction.seller.totalSales}{" "}
-                      sales)
+                      4.8 (342 sales)
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4" />
-                    {auction.seller.location}
+                    New York, NY
                   </div>
                   <Button variant="outline" className="w-full mt-4">
                     View Seller Profile
