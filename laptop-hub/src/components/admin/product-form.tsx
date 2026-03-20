@@ -125,11 +125,13 @@ export function ProductForm({ initialData }: Props) {
       }
     } catch (error: any) {
       console.error('General upload error:', error)
-      toast.error("An unexpected error occurred during upload")
+      toast.error("Upload failed: Check your connection or permissions")
     } finally {
       setIsUploading(false)
-      // Reset input value manually to allow re-uploading same file
-      if (e.target) e.target.value = ''
+      // Safety delay to ensure state propagates before resetting input
+      setTimeout(() => {
+        if (e.target) e.target.value = ''
+      }, 100)
     }
   }
 

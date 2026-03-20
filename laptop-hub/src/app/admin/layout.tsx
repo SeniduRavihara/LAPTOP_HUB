@@ -1,4 +1,17 @@
+"use client"
 import { AdminSidebar } from '@/components/admin-sidebar'
+import { SidebarProvider, useSidebar } from '@/components/providers/sidebar-provider'
+
+function AdminMain({ children }: { children: React.ReactNode }) {
+  const { isCollapsed } = useSidebar()
+  return (
+    <main className={`flex-1 overflow-y-auto transition-all duration-300 ${isCollapsed ? 'pl-20' : 'pl-64'}`}>
+      <div className="container mx-auto p-8">
+        {children}
+      </div>
+    </main>
+  )
+}
 
 export default function AdminLayout({
   children,
@@ -6,13 +19,11 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex h-screen w-full bg-background">
-      <AdminSidebar />
-      <main className="flex-1 overflow-y-auto pl-64">
-        <div className="container mx-auto p-8">
-          {children}
-        </div>
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-background overflow-hidden">
+        <AdminSidebar />
+        <AdminMain>{children}</AdminMain>
+      </div>
+    </SidebarProvider>
   )
 }
