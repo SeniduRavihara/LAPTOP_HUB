@@ -23,7 +23,7 @@ export default async function EditProductPage({
   // Transform data for the form
   const formattedProduct = {
     ...product,
-    images: product.images ? product.images.join(", ") : "",
+    images: product.images || [],
   }
 
   return (

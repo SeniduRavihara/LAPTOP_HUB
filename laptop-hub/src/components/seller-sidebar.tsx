@@ -63,7 +63,7 @@ export function SellerSidebar() {
         {/* Menu Items */}
         <nav className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || (item.href !== '/seller/dashboard' && pathname.startsWith(item.href))
             return (
               <Link
                 key={item.href}

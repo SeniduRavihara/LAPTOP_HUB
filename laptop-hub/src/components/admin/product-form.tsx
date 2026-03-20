@@ -48,21 +48,22 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>
 
 type Props = {
-  initialData?: ProductFormValues & { id: string }
+  initialData?: any
 }
+
+// Initialize Supabase client outside the component to prevent re-initialization on every render
+const supabase = createClient()
 
 export function ProductForm({ initialData }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   
-  // Initialize Supabase client
-  const supabase = createClient()
-
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData ? {
       ...initialData,
+      images: initialData.images || [],
       specs: Object.entries(initialData.specs || {}).map(([key, value]) => ({
         key,
         value: String(value)
@@ -91,47 +92,44 @@ export function ProductForm({ initialData }: Props) {
     const uploadedUrls: string[] = []
 
     try {
-      console.log('Starting image upload for', files.length, 'files')
-      for (const file of Array.from(files)) {
-        console.log('Uploading file:', file.name, 'size:', file.size)
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
-        const filePath = `${fileName}`
+      console.log('Starting image upload...')
+      const filesArray = Array.from(files)
+      
+      for (const file of filesArray) {
+        try {
+          const fileExt = file.name.split('.').pop()
+          const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
+          const filePath = `${fileName}`
 
-        console.log('Target path:', filePath)
-        const { error: uploadError, data } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          })
+          const { error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, file)
 
-        if (uploadError) {
-          console.error('Supabase upload error:', uploadError)
-          throw uploadError
+          if (uploadError) throw uploadError
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(filePath)
+
+          uploadedUrls.push(publicUrl)
+        } catch (fileError: any) {
+          console.error(`Error uploading file ${file.name}:`, fileError)
+          toast.error(`Failed to upload ${file.name}`)
         }
-
-        console.log('Upload successful, generating public URL...')
-        const { data: { publicUrl } } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath)
-
-        console.log('Public URL:', publicUrl)
-        uploadedUrls.push(publicUrl)
       }
 
-      // Add new URLs to existing images
-      const currentImages = form.getValues("images")
-      form.setValue("images", [...currentImages, ...uploadedUrls])
-      toast.success("Images uploaded successfully")
+      if (uploadedUrls.length > 0) {
+        const currentImages = form.getValues("images")
+        form.setValue("images", [...currentImages, ...uploadedUrls])
+        toast.success(`Successfully uploaded ${uploadedUrls.length} image(s)`)
+      }
     } catch (error: any) {
-      console.error('Full upload error context:', error)
-      toast.error(`Upload failed: ${error.message || "Unknown error"}`)
+      console.error('General upload error:', error)
+      toast.error("An unexpected error occurred during upload")
     } finally {
-      console.log('Upload process finished')
       setIsUploading(false)
-      // Reset input value to allow selecting same file again
-      e.target.value = ''
+      // Reset input value manually to allow re-uploading same file
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -212,20 +210,20 @@ export function ProductForm({ initialData }: Props) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Product Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem className="md:col-span-3">
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Product Name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="brand"
@@ -272,8 +270,6 @@ export function ProductForm({ initialData }: Props) {
               </FormItem>
             )}
           />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="stock"
@@ -291,7 +287,7 @@ export function ProductForm({ initialData }: Props) {
             control={form.control}
             name="badge"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Badge (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g. New, Sale, Hot" {...field} />
@@ -301,24 +297,24 @@ export function ProductForm({ initialData }: Props) {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="md:col-span-3">
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Tell customers about this laptop..."
+                    className="min-h-[120px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Tell customers about this laptop..."
-                  className="min-h-[120px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
