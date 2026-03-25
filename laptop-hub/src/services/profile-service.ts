@@ -6,17 +6,16 @@ export class ProfileService {
      */
     static async getUserProfile(supabase: any, userId: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('users')
                     .select('*')
                     .eq('id', userId)
-                    .single();
-
-                if (error) throw error;
-                return data;
-            })(),
-            10000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            20000,
             'Request timed out'
         );
     }
@@ -26,18 +25,17 @@ export class ProfileService {
      */
     static async updateUserRole(supabase: any, userId: string, role: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('users')
                     .update({ role })
                     .eq('id', userId)
                     .select()
-                    .single();
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            20000,
             'Update timed out'
         );
     }

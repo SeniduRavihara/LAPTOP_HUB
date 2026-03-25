@@ -11,15 +11,14 @@ export class AuthService {
      */
     static async signIn(supabase: any, email: string, password: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
+            () => supabase.auth.signInWithPassword({
+                email,
+                password,
+            }).then(({ data, error }: any) => {
                 if (error) throw error;
                 return data;
-            })(),
-            20000,
+            }),
+            60000,
             "Sign-in timed out. Please try again."
         );
     }
@@ -28,20 +27,17 @@ export class AuthService {
      * OAuth sign in with Google
      */
     static async signInWithGoogle(supabase: any) {
-        // Sign in with OAuth usually redirects, so timeout might not be useful here
-        // but let's wrap the initial call anyway
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: `${window.location.origin}/auth/callback`,
-                    },
-                });
+            () => supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                },
+            }).then(({ data, error }: any) => {
                 if (error) throw error;
                 return data;
-            })(),
-            15000,
+            }),
+            20000,
             "Google sign-in timed out."
         );
     }
@@ -51,16 +47,15 @@ export class AuthService {
      */
     static async signUp(supabase: any, email: string, password: string, metadata?: any) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: metadata ? { data: metadata } : undefined,
-                });
+            () => supabase.auth.signUp({
+                email,
+                password,
+                options: metadata ? { data: metadata } : undefined,
+            }).then(({ data, error }: any) => {
                 if (error) throw error;
                 return data;
-            })(),
-            20000,
+            }),
+            60000,
             "Sign-up timed out. Please check your connection."
         );
     }
@@ -70,11 +65,10 @@ export class AuthService {
      */
     static async signOut(supabase: any) {
         return withTimeout(
-            (async () => {
-                const { error } = await supabase.auth.signOut();
+            () => supabase.auth.signOut().then(({ error }: any) => {
                 if (error) throw error;
-            })(),
-            10000,
+            }),
+            15000,
             "Sign-out timed out."
         );
     }
@@ -84,12 +78,11 @@ export class AuthService {
      */
     static async getSession(supabase: any) {
         return withTimeout(
-            (async () => {
-                const { data: { session }, error } = await supabase.auth.getSession();
+            () => supabase.auth.getSession().then(({ data: { session }, error }: any) => {
                 if (error) throw error;
                 return session;
-            })(),
-            10000,
+            }),
+            20000,
             "Session fetch timed out."
         );
     }
@@ -108,12 +101,11 @@ export class AuthService {
      */
     static async getUser(supabase: any) {
         return withTimeout(
-            (async () => {
-                const { data: { user }, error } = await supabase.auth.getUser();
+            () => supabase.auth.getUser().then(({ data: { user }, error }: any) => {
                 if (error) throw error;
                 return user;
-            })(),
-            10000,
+            }),
+            20000,
             "User fetch timed out."
         );
     }
@@ -123,12 +115,11 @@ export class AuthService {
      */
     static async exchangeCodeForSession(supabase: any, code: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            () => supabase.auth.exchangeCodeForSession(code).then(({ data, error }: any) => {
                 if (error) throw error;
                 return data;
-            })(),
-            15000,
+            }),
+            20000,
             "Auth code exchange timed out."
         );
     }

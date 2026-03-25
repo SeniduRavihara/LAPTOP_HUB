@@ -23,101 +23,95 @@ export type ProductUpdate = Partial<ProductInsert>;
 export class ProductService {
     static async getRecentProducts(supabase: any, limit: number = 8) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('products')
                     .select('*, auctions(status, starting_bid, end_time, bids(amount))')
                     .order('created_at', { ascending: false })
-                    .limit(limit);
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .limit(limit)
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            60000,
             'Request timed out. Please check your connection.'
         );
     }
 
     static async getSellerProducts(supabase: any, sellerId: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('products')
                     .select('*, auctions(status)')
                     .eq('seller_id', sellerId)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .order('created_at', { ascending: false })
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            60000,
             'Request timed out.'
         );
     }
 
     static async getProductById(supabase: any, id: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('products')
                     .select('*, auction:auctions(*)')
                     .eq('id', id)
-                    .single();
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            60000,
             'Request timed out.'
         );
     }
 
     static async createProduct(supabase: any, product: ProductInsert) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('products')
                     .insert(product)
                     .select()
-                    .single();
-
-                if (error) throw error;
-                return data as Product;
-            })(),
-            20000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data as Product;
+                    }),
+            60000,
             'Saving product timed out. Please try again.'
         );
     }
 
     static async updateProduct(supabase: any, id: string, product: ProductUpdate) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from('products')
                     .update(product)
                     .eq('id', id)
                     .select()
-                    .single();
-
-                if (error) throw error;
-                return data as Product;
-            })(),
-            20000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data as Product;
+                    }),
+            60000,
             'Updating product timed out. Please try again.'
         );
     }
 
     static async deleteProduct(supabase: any, id: string) {
         return withTimeout(
-            (async () => {
-                const { error } = await supabase
+            () => supabase
                     .from('products')
                     .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
-            })(),
-            15000,
+                    .eq('id', id)
+                    .then(({ error }: any) => {
+                        if (error) throw error;
+                    }),
+            30000,
             'Deletion timed out.'
         );
     }
@@ -128,15 +122,15 @@ export class ProductService {
         const filePath = `product-images/${fileName}`;
 
         const uploadResult = await withTimeout(
-            supabase.storage
+            () => supabase.storage
                 .from('product-images')
                 .upload(filePath, file, {
                     contentType: file.type,
                     cacheControl: '3600',
                     upsert: false
                 }),
-            30000,
-            'Image upload timed out after 30 seconds.'
+            120000, // 120s for images
+            'Image upload timed out after 60 seconds.'
         );
 
         const { error: uploadError } = uploadResult as any;

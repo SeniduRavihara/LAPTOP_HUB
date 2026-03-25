@@ -11,8 +11,7 @@ export class OrderService {
      */
     static async getSellerOrderItems(supabase: any, sellerId: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from("order_items")
                     .select(`
                         *,
@@ -20,12 +19,12 @@ export class OrderService {
                         orders!inner(id, created_at, status, total_amount, customer_id, shipping_address)
                     `)
                     .eq("products.seller_id", sellerId)
-                    .order("created_at", { ascending: false });
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .order("created_at", { ascending: false })
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            60000,
             "Request timed out"
         );
     }
@@ -35,20 +34,19 @@ export class OrderService {
      */
     static async getUserOrders(supabase: any, userId: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from("orders")
                     .select(`
                         *,
                         order_items(*, products(name))
                     `)
                     .eq("customer_id", userId)
-                    .order("created_at", { ascending: false });
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .order("created_at", { ascending: false })
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            60000,
             "Request timed out"
         );
     }
@@ -58,18 +56,17 @@ export class OrderService {
      */
     static async updateOrderStatus(supabase: any, orderId: string, status: string) {
         return withTimeout(
-            (async () => {
-                const { data, error } = await supabase
+            () => supabase
                     .from("orders")
                     .update({ status })
                     .eq("id", orderId)
                     .select()
-                    .single();
-
-                if (error) throw error;
-                return data;
-            })(),
-            15000,
+                    .single()
+                    .then(({ data, error }: any) => {
+                        if (error) throw error;
+                        return data;
+                    }),
+            20000,
             "Update timed out"
         );
     }

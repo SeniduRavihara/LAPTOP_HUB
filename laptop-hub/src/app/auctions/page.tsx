@@ -1,3 +1,5 @@
+"use client";
+
 import { AuctionCard } from "@/components/auction-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AuctionService } from "@/services/auction-service";
 
 export default function AuctionsPage() {
   const [auctions, setAuctions] = useState<any[]>([]);
@@ -21,30 +24,20 @@ export default function AuctionsPage() {
     async function fetchAuctions() {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("auctions")
-          .select(`
-            *,
-            products (*),
-            bids (amount)
-          `)
-          .eq("status", "active")
-          .order("end_time", { ascending: true });
+        const data = await AuctionService.getActiveAuctions(supabase);
 
-        if (error) throw error;
-
-        const formattedAuctions = data.map((auction: any) => {
-          const maxBid = auction.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
+        const formattedAuctions = (data || []).map((auction: any) => {
+          const maxBid = (auction.bids || []).reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
           return {
             id: auction.id,
-            name: auction.products.name,
-            brand: auction.products.brand,
-            image: auction.products.images?.[0] || "/placeholder.svg",
+            name: auction.products?.name || "Unknown Product",
+            brand: auction.products?.brand || "Generic",
+            image: auction.products?.images?.[0] || "/placeholder.svg",
             currentBid: maxBid || auction.starting_bid,
-            numberOfBids: auction.bids.length,
+            numberOfBids: (auction.bids || []).length,
             endTime: auction.end_time,
-            condition: auction.products.specs?.Condition || "New", // Assuming condition is in specs
-            seller: "TechStore_Pro", // Placeholder or fetch seller name
+            condition: auction.products?.specs?.Condition || "New",
+            seller: "TechStore_Pro", 
           };
         });
 
