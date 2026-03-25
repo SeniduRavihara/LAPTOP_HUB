@@ -2,9 +2,10 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import Link from 'link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSidebar } from './providers/sidebar-provider'
+import { AuthService } from '@/services/auth-service'
 
 export function SellerSidebar() {
   const pathname = usePathname()
@@ -24,7 +25,7 @@ export function SellerSidebar() {
   ]
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await AuthService.signOut(supabase)
     router.push('/login')
     router.refresh()
   }

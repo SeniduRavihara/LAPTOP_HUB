@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Session, User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { AuthService } from '@/services/auth-service'
+import { ProfileService } from '@/services/profile-service'
 
 type AuthContextType = {
   user: User | null
@@ -31,38 +33,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const setData = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) throw error
-      
-      setSession(session)
-      setUser(session?.user ?? null)
+      try {
+        const session = await AuthService.getSession(supabase)
+        setSession(session)
+        setUser(session?.user ?? null)
 
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        
-        setRole(profile?.role ?? 'customer')
-      } else {
-        setRole(null)
+        if (session?.user) {
+          const profile = await ProfileService.getUserProfile(supabase, session.user.id)
+          setRole(profile?.role ?? 'customer')
+        } else {
+          setRole(null)
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const subscription = AuthService.onAuthStateChange(supabase, async (_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       
       if (session?.user) {
-         const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        
+        const profile = await ProfileService.getUserProfile(supabase, session.user.id)
         setRole(profile?.role ?? 'customer')
       } else {
         setRole(null)
@@ -74,13 +68,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setData()
 
     return () => {
-      listener.subscription.unsubscribe()
+      subscription.unsubscribe()
     }
   }, [supabase, router])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    try {
+      await AuthService.signOut(supabase)
+      router.push('/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
   return (

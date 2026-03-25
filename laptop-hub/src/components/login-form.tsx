@@ -12,6 +12,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { AuthService } from "@/services/auth-service";
+import { ProfileService } from "@/services/profile-service";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -41,27 +43,13 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-    } else {
-      // Check user role for redirection
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    try {
+      await AuthService.signIn(supabase, data.email, data.password);
+      
+      const user = await AuthService.getUser(supabase);
 
       if (user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+        const profile = await ProfileService.getUserProfile(supabase, user.id);
 
         toast.success("Signed in successfully!");
 
@@ -74,18 +62,16 @@ export function LoginForm() {
         }
         router.refresh();
       }
+    } catch (error: any) {
+      toast.error(error.message);
+      setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
+    try {
+      await AuthService.signInWithGoogle(supabase);
+    } catch (error: any) {
       toast.error(error.message);
     }
   };

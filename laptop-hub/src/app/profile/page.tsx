@@ -4,20 +4,18 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { AuthService } from "@/services/auth-service"
+import { ProfileService } from "@/services/profile-service"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
   if (!user) {
     redirect("/login")
   }
 
-  const { data: userData } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single()
+  const userData = await ProfileService.getUserProfile(supabase, user.id)
 
   return (
     <div className="container max-w-4xl mx-auto py-10 px-4">

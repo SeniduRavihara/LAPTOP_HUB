@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { AuthService } from "@/services/auth-service";
 
 const signupSchema = z
   .object({
@@ -68,21 +69,12 @@ export function SignupForm() {
   const onSubmit = async (formData: SignupFormValues) => {
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      options: {
-        data: {
-          name: formData.name,
-          role: formData.role,
-        },
-      },
-    });
+    try {
+      await AuthService.signUp(supabase, formData.email, formData.password, {
+        name: formData.name,
+        role: formData.role,
+      });
 
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-    } else {
       toast.success("Account created successfully!");
 
       if (formData.role === "seller") {
@@ -91,18 +83,16 @@ export function SignupForm() {
         router.push("/");
       }
       router.refresh();
+    } catch (error: any) {
+      toast.error(error.message);
+      setLoading(false);
     }
   };
 
   const handleGoogleSignup = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
+    try {
+      await AuthService.signInWithGoogle(supabase);
+    } catch (error: any) {
       toast.error(error.message);
     }
   };

@@ -1,95 +1,19 @@
 import { ProductCard } from "@/components/product-card";
+import { AuctionCard } from "@/components/auction-card";
 import { ProductFilters } from "@/components/product-filters";
 import { Navbar } from "@/components/navbar";
+import { createClient } from "@/lib/supabase/server";
+import Image from "next/image";
 import Link from "next/link";
+import { ProductService } from "@/services/product-service";
+import { AuctionService } from "@/services/auction-service";
 
-const featuredProducts = [
-  {
-    id: "1",
-    name: 'Dell XPS 13 Plus Laptop - 13.4" FHD Display, Intel Core i7, 16GB RAM',
-    brand: "Dell",
-    price: 1299,
-    image: "/dell-xps-13-laptop.jpg",
-    rating: 4.8,
-    reviews: 328,
-    stock: 5,
-    badge: "Best Seller",
-  },
-  {
-    id: "2",
-    name: 'HP Pavilion 15 Laptop - 15.6" HD Display, AMD Ryzen 5, 8GB RAM',
-    brand: "HP",
-    price: 549,
-    image: "/hp-pavilion-laptop.jpg",
-    rating: 4.5,
-    reviews: 156,
-    stock: 12,
-  },
-  {
-    id: "3",
-    name: 'MacBook Air M2 - 13.6" Retina Display, 8-core GPU, 256GB SSD',
-    brand: "Apple",
-    price: 1199,
-    image: "/macbook-air-m2.png",
-    rating: 4.9,
-    reviews: 412,
-    stock: 3,
-    badge: "New",
-  },
-  {
-    id: "4",
-    name: 'Lenovo ThinkPad E14 Gen 5 - 14" FHD, Intel Core i5, 16GB RAM',
-    brand: "Lenovo",
-    price: 699,
-    image: "/lenovo-thinkpad.png",
-    rating: 4.6,
-    reviews: 203,
-    stock: 8,
-  },
-  {
-    id: "5",
-    name: 'ASUS ROG Gaming Laptop - 15.6" 165Hz, RTX 4060, Intel i7-12K',
-    brand: "ASUS",
-    price: 1599,
-    image: "/asus-rog-gaming-laptop.jpg",
-    rating: 4.7,
-    reviews: 289,
-    stock: 6,
-    badge: "Hot Deal",
-  },
-  {
-    id: "6",
-    name: 'Microsoft Surface Laptop 5 - 13.5" Touch, Intel Core i5, 8GB RAM',
-    brand: "Microsoft",
-    price: 999,
-    image: "/microsoft-surface-laptop.jpg",
-    rating: 4.4,
-    reviews: 127,
-    stock: 0,
-  },
-  {
-    id: "7",
-    name: 'MSI GF63 Thin Gaming Laptop - 15.6" 144Hz, RTX 4050, Ryzen 7',
-    brand: "MSI",
-    price: 899,
-    image: "/msi-gaming-laptop.jpg",
-    rating: 4.5,
-    reviews: 178,
-    stock: 10,
-  },
-  {
-    id: "8",
-    name: 'Acer Aspire 5 Laptop - 15.6" FHD, Intel Core i5, 16GB RAM',
-    brand: "Acer",
-    price: 599,
-    image: "/acer-aspire-laptop.jpg",
-    rating: 4.3,
-    reviews: 95,
-    stock: 14,
-  },
-];
+export default async function HomePage() {
+  const supabase = await createClient();
 
-export default function HomePage() {
+  const products = await ProductService.getRecentProducts(supabase, 8);
+  const auctions = await AuctionService.getActiveAuctions(supabase, 4);
+
   return (
     <>
       <Navbar />
@@ -122,25 +46,56 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex-1 hidden md:flex justify-end">
-              <div className="w-full max-w-md h-64 bg-secondary rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-32 h-32 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 3v2m6-2v2M9 5h6m-6 4h12M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h.01M15 17h.01M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
+              <div className="w-full max-w-md h-64 bg-secondary rounded-lg flex items-center justify-center relative overflow-hidden group">
+                <Image 
+                  src="/laptop-hero.png" 
+                  alt="Premium Laptops" 
+                  fill 
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/10"></div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Featured Auctions Section */}
+      {auctions && auctions.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground">Featured Auctions</h2>
+              <p className="text-muted-foreground">Ending soon! Don't miss out on these deals.</p>
+            </div>
+            <Link href="/auctions" className="text-primary hover:underline font-semibold flex items-center gap-1 group">
+              View All Auctions
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {auctions.map((auction: any) => {
+              const product = auction.products;
+              const currentBid = auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid;
+              
+              return (
+                <AuctionCard 
+                  key={auction.id}
+                  id={auction.id}
+                  name={product.name}
+                  brand={product.brand}
+                  image={product.images?.[0]}
+                  currentBid={currentBid}
+                  numberOfBids={auction.bids?.length || 0}
+                  endTime={auction.end_time}
+                  rating={4.8}
+                  seller="Verified Seller"
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Products Section */}
       <section
@@ -153,32 +108,49 @@ export default function HomePage() {
             <ProductFilters />
           </aside>
 
-          {/* Products Grid */}
-          <div className="flex-1">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  All Laptops
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Showing {featuredProducts.length} products
-                </p>
+            <div className="flex-1">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Recently Added
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Discover our latest inventory
+                  </p>
+                </div>
+                <Link href="/products" className="text-primary hover:underline text-sm font-medium">
+                  View All
+                </Link>
               </div>
-              <select className="border border-border bg-background rounded-lg px-4 py-2 text-sm text-foreground cursor-pointer">
-                <option>Most Popular</option>
-                <option>Newest</option>
-                <option>Price: Low to High</option>
-                <option>Price: High to Low</option>
-                <option>Best Rating</option>
-              </select>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products?.map((product: any) => {
+                  const auction = Array.isArray(product.auctions) ? product.auctions[0] : product.auctions;
+                  const isAuction = auction && auction.status === 'active';
+                  const currentBid = isAuction 
+                    ? (auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid)
+                    : null;
+
+                  return (
+                    <ProductCard 
+                      key={product.id} 
+                      id={product.id}
+                      name={product.name}
+                      brand={product.brand}
+                      price={product.price}
+                      image={product.images?.[0]}
+                      rating={4.5} // Mock for now as requested
+                      reviews={12} // Mock for now
+                      stock={product.stock}
+                      badge={product.badge}
+                      isAuction={isAuction}
+                      currentBid={currentBid}
+                      endTime={isAuction ? auction.end_time : null}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
         </div>
       </section>
 

@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -10,16 +11,18 @@ import {
 import { createClient } from "@/lib/supabase/server"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { AuthService } from "@/services/auth-service"
+import { ProductService } from "@/services/product-service"
 
 export default async function SellerProductsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("seller_id", user?.id)
-    .order("created_at", { ascending: false })
+  if (!user) {
+    return <div>Please log in to view your products.</div>
+  }
+
+  const products = await ProductService.getSellerProducts(supabase, user.id)
 
   return (
     <div className="space-y-4">
@@ -39,17 +42,25 @@ export default async function SellerProductsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Brand</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products?.map((product) => (
+            {products?.map((product: any) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.brand}</TableCell>
-                <TableCell>${product.price}</TableCell>
+                <TableCell>
+                  {product.auctions && (Array.isArray(product.auctions) ? product.auctions.length > 0 : !!product.auctions) ? (
+                    <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">Auction</Badge>
+                  ) : (
+                    <Badge variant="secondary">Standard</Badge>
+                  )}
+                </TableCell>
+                <TableCell>LKR {product.price.toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" asChild>

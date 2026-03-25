@@ -4,39 +4,24 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useState } from "react";
 
-export function ProductDetailPage() {
+interface ProductDetailPageProps {
+  product: any;
+}
+
+export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const product = {
-    name: 'Dell XPS 13 Plus Laptop - 13.4" FHD Display',
-    brand: "Dell",
-    price: 1299,
-    originalPrice: 1499,
-    rating: 4.8,
-    reviews: 328,
-    inStock: true,
-    seller: "TechStore_Pro",
-    sellerRating: 4.8,
-    description:
-      "Premium ultrabook with Intel Core i7, 16GB RAM, and lightning-fast 512GB SSD. Perfect for professionals and creative work.",
-    specs: [
-      { label: "Display", value: '13.4" FHD (1920x1200)' },
-      { label: "Processor", value: "Intel Core i7-1280P" },
-      { label: "RAM", value: "16GB LPDDR5" },
-      { label: "Storage", value: "512GB NVMe SSD" },
-      { label: "Graphics", value: "Intel Iris Xe" },
-      { label: "Battery", value: "Up to 12 hours" },
-      { label: "Weight", value: "2.8 lbs" },
-      { label: "OS", value: "Windows 11 Pro" },
-    ],
-    images: [
-      "/placeholder.svg?key=6xdaw",
-      "/placeholder.svg?key=jr2kp",
-      "/placeholder.svg?key=88r7h",
-    ],
-  };
+  if (!product) return null;
+
+  const images = product.images || ["/placeholder.svg"];
+  const specs = product.specs 
+    ? (Array.isArray(product.specs) 
+        ? product.specs 
+        : Object.entries(product.specs).map(([key, value]) => ({ key, value })))
+    : [];
+  const originalPrice = product.original_price || product.price * 1.15;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -46,16 +31,18 @@ export function ProductDetailPage() {
           <div className="bg-secondary border border-border rounded-lg overflow-hidden mb-4">
             <div className="relative w-full h-96">
               <Image
-                src={product.images[selectedImage] || "/placeholder.svg"}
+                src={images[selectedImage] || "/placeholder.svg"}
                 alt={product.name}
                 fill
+                unoptimized
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
+                onError={() => console.log(`Detail main image failed to load: ${images[selectedImage]}`)}
               />
             </div>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {product.images.map((image, idx) => (
+            {images.map((image: string, idx: number) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImage(idx)}
@@ -69,6 +56,7 @@ export function ProductDetailPage() {
                   src={image || "/placeholder.svg"}
                   alt={`View ${idx + 1}`}
                   fill
+                  unoptimized
                   sizes="100px"
                   className="object-cover"
                 />
@@ -106,10 +94,10 @@ export function ProductDetailPage() {
                 ))}
               </div>
               <span className="text-sm font-semibold text-foreground">
-                {product.rating}
+                {product.rating || 4.5}
               </span>
               <span className="text-sm text-muted-foreground">
-                ({product.reviews} reviews)
+                ({product.reviews || 0} reviews)
               </span>
             </div>
 
@@ -117,20 +105,20 @@ export function ProductDetailPage() {
             <div className="mb-6">
               <div className="flex items-baseline gap-3 mb-3">
                 <span className="text-4xl font-bold text-primary">
-                  ${product.price}
+                  LKR {product.price?.toLocaleString()}
                 </span>
                 <span className="text-lg text-muted-foreground line-through">
-                  ${product.originalPrice}
+                  LKR {originalPrice?.toLocaleString()}
                 </span>
                 <span className="text-lg font-bold text-green-600">
                   {Math.round(
-                    (1 - product.price / product.originalPrice) * 100
+                    (1 - product.price / originalPrice) * 100
                   )}
                   % off
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Free shipping on orders over $50
+                Free shipping on orders over LKR 50,000
               </p>
             </div>
 
@@ -140,14 +128,14 @@ export function ProductDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-foreground">
-                    {product.seller}
+                    {product.seller_name || "Verified Seller"}
                   </p>
                   <div className="flex items-center gap-1 mt-1">
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(product.sellerRating)
+                          i < Math.floor(product.sellerRating || 4.8)
                             ? "text-yellow-400"
                             : "text-gray-300"
                         }`}
@@ -158,7 +146,7 @@ export function ProductDetailPage() {
                       </svg>
                     ))}
                     <span className="text-xs text-muted-foreground ml-1">
-                      {product.sellerRating}
+                      {product.sellerRating || 4.8}
                     </span>
                   </div>
                 </div>
@@ -172,10 +160,10 @@ export function ProductDetailPage() {
             <div className="mb-6">
               <p
                 className={`text-sm font-semibold ${
-                  product.inStock ? "text-green-600" : "text-red-600"
+                  product.stock > 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
-                {product.inStock ? "✓ In Stock" : "Out of Stock"}
+                {product.stock > 0 ? `✓ In Stock (${product.stock} available)` : "Out of Stock"}
               </p>
             </div>
 
@@ -226,10 +214,10 @@ export function ProductDetailPage() {
                 Key Specifications
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                {product.specs.slice(0, 6).map((spec, idx) => (
+                {specs.slice(0, 8).map((spec: any, idx: number) => (
                   <div key={idx}>
                     <p className="text-xs text-muted-foreground mb-1">
-                      {spec.label}
+                      {spec.key}
                     </p>
                     <p className="font-medium text-foreground text-sm">
                       {spec.value}

@@ -9,17 +9,16 @@ import {
 } from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/server"
 
+import { AuthService } from "@/services/auth-service"
+import { OrderService } from "@/services/order-service"
+
 export async function OrderHistory() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
   if (!user) return null
 
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("customer_id", user.id)
-    .order("created_at", { ascending: false })
+  const orders = await OrderService.getUserOrders(supabase, user.id)
 
   return (
     <div className="space-y-4">

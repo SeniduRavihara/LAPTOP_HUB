@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { AuthService } from '@/services/auth-service'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    await AuthService.exchangeCodeForSession(supabase, code)
   }
 
   // URL to redirect to after sign in process completes

@@ -15,6 +15,9 @@ interface ProductCardProps {
   reviews: number;
   stock: number;
   badge?: string;
+  isAuction?: boolean;
+  currentBid?: number | null;
+  endTime?: string | null;
 }
 
 export function ProductCard({
@@ -27,22 +30,35 @@ export function ProductCard({
   reviews,
   stock,
   badge,
+  isAuction,
+  currentBid,
+  endTime,
 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
 
   return (
-    <Link href={`/product/${id}`}>
+    <Link href={isAuction ? `/auctions/${id}` : `/products/${id}`}>
       <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col">
         {/* Image Container */}
         <div className="relative w-full h-48 bg-secondary overflow-hidden">
           <Image
-            src={image || "/placeholder.svg"}
+            src={imgSrc}
             alt={name}
             fill
+            unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => {
+              console.log(`Image failed to load: ${imgSrc}`);
+              setImgSrc("/placeholder.svg");
+            }}
           />
-          {badge && (
+          {isAuction ? (
+            <div className="absolute top-3 right-3 bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+              Auction
+            </div>
+          ) : badge && (
             <div className="absolute top-3 right-3 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full">
               {badge}
             </div>
@@ -99,23 +115,43 @@ export function ProductCard({
             <span className="text-xs text-muted-foreground">({reviews})</span>
           </div>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-2 mb-4">
-            <span className="text-lg font-bold text-foreground">
-              ${price.toLocaleString()}
-            </span>
-            <span className="text-sm text-muted-foreground line-through">
-              ${(price * 1.2).toFixed(0)}
-            </span>
+          {/* Price / Bid */}
+          <div className="flex flex-col mb-4">
+            {isAuction ? (
+              <>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Current Bid</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold text-primary">
+                    LKR {currentBid?.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Price</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold text-foreground">
+                    LKR {price.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground line-through">
+                    LKR {(price * 1.15).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Add to Cart Button */}
+          {/* Action Button */}
           <Button
             onClick={(e) => e.preventDefault()}
-            disabled={stock === 0}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={stock === 0 && !isAuction}
+            className={`w-full rounded-lg h-9 font-medium transition-all duration-300 ${
+              isAuction 
+                ? "bg-orange-600 hover:bg-orange-700 text-white" 
+                : "bg-primary hover:bg-primary/90 text-primary-foreground"
+            }`}
           >
-            Add to Cart
+            {isAuction ? "Place Bid" : "Add to Cart"}
           </Button>
         </div>
       </div>

@@ -1,6 +1,28 @@
 import { ProductDetailPage } from "@/components/product-detail-page";
+import { createClient } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
+import { ProductService } from "@/services/product-service";
 
-export default function ProductDetail() {
+export default async function ProductDetail({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const product = await ProductService.getProductById(supabase, id);
+
+  if (!product) {
+    notFound();
+  }
+
+  // If the product is currently an active auction, redirect to the auction page
+  const auction = Array.isArray(product.auctions) ? product.auctions[0] : product.auctions;
+  if (auction && auction.status === 'active') {
+    redirect(`/auctions/${auction.id}`);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
@@ -17,11 +39,11 @@ export default function ProductDetail() {
             Products
           </a>
           <span>/</span>
-          <span className="text-foreground font-medium">Dell XPS 13 Plus</span>
+          <span className="text-foreground font-medium">{product.name}</span>
         </nav>
       </div>
 
-      <ProductDetailPage />
+      <ProductDetailPage product={product} />
     </div>
   );
 }

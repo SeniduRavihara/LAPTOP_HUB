@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -16,7 +17,7 @@ export default async function ProductsPage() {
 
   const { data: products } = await supabase
     .from("products")
-    .select("*")
+    .select("*, auction:auctions(status)")
     .order("created_at", { ascending: false })
 
   return (
@@ -37,17 +38,25 @@ export default async function ProductsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Brand</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products?.map((product) => (
+            {products?.map((product: any) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.brand}</TableCell>
-                <TableCell>${product.price}</TableCell>
+                <TableCell>
+                  {product.auction && (Array.isArray(product.auction) ? product.auction.length > 0 : !!product.auction) ? (
+                    <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">Auction</Badge>
+                  ) : (
+                    <Badge variant="secondary">Standard</Badge>
+                  )}
+                </TableCell>
+                <TableCell>LKR {product.price.toLocaleString()}</TableCell>
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" asChild>

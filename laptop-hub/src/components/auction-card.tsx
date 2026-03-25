@@ -29,6 +29,7 @@ export function AuctionCard({
   seller,
 }: AuctionCardProps) {
   const [isWatching, setIsWatching] = useState(false);
+  const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
   const timeLeft = new Date(endTime).toLocaleDateString(); // Simple placeholder
   
   return (
@@ -37,11 +38,16 @@ export function AuctionCard({
         {/* Image Container */}
         <div className="relative w-full h-48 bg-secondary overflow-hidden">
           <Image
-            src={image || "/placeholder.svg"}
+            src={imgSrc}
             alt={name}
             fill
+            unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => {
+              console.log(`Auction image failed to load: ${imgSrc}`);
+              setImgSrc("/placeholder.svg");
+            }}
           />
           <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             Auction

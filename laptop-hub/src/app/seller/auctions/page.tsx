@@ -9,16 +9,18 @@ import {
 } from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/server"
 
+import { AuthService } from "@/services/auth-service"
+import { AuctionService } from "@/services/auction-service"
+
 export default async function SellerAuctionsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
-  // Fetch auctions for this seller
-  const { data: auctions } = await supabase
-    .from("auctions")
-    .select("*, products(name), bids(amount)")
-    .eq("seller_id", user?.id)
-    .order("created_at", { ascending: false })
+  if (!user) {
+    return <div>Please log in to view your auctions.</div>
+  }
+
+  const auctions = await AuctionService.getSellerAuctions(supabase, user.id)
 
   return (
     <div className="space-y-4">

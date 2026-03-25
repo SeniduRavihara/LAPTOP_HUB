@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useAuth } from "@/context/AuthContext"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -27,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { toast } from "sonner"
+import { ProductService } from "@/services/product-service"
+import { AuctionService } from "@/services/auction-service"
 
 const numericOptional = z.preprocess(
   (val) => (val === "" || val === null || val === undefined ? null : val),
@@ -67,14 +70,32 @@ type Props = {
   initialData?: any
 }
 
-// Initialize Supabase client outside the component to prevent re-initialization on every render
-const supabase = createClient()
 
 export function ProductForm({ initialData }: Props) {
   const router = useRouter()
+  const { user } = useAuth()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   
+  useEffect(() => {
+    if (initialData?.images) {
+      console.log('Initial Images:', initialData.images)
+    }
+    
+    // Diagnostic: List all buckets
+    const checkBuckets = async () => {
+      console.log('Checking available storage buckets...')
+      const { data: buckets, error } = await supabase.storage.listBuckets()
+      if (error) {
+        console.error('Error listing buckets:', error)
+      } else {
+        console.log('Available buckets:', buckets.map((b: any) => `${b.name} (Public: ${b.public})`))
+      }
+    }
+    checkBuckets()
+  }, [initialData])
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData ? {
@@ -117,33 +138,27 @@ export function ProductForm({ initialData }: Props) {
     const files = e.target.files
     if (!files || files.length === 0) return
 
+    if (!user) {
+      toast.error("You must be logged in to upload images")
+      return
+    }
+
     setIsUploading(true)
     const uploadedUrls: string[] = []
 
     try {
-      console.log('Starting image upload...')
+      console.log('Starting image upload workflow...')
       const filesArray = Array.from(files)
       
       for (const file of filesArray) {
         try {
-          const fileExt = file.name.split('.').pop()
-          const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
-          const filePath = `${fileName}`
-
-          const { error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file)
-
-          if (uploadError) throw uploadError
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath)
-
+          console.log(`Uploading file: ${file.name}...`)
+          const publicUrl = await ProductService.uploadImage(supabase, file, user.id)
           uploadedUrls.push(publicUrl)
-        } catch (fileError: any) {
-          console.error(`Error uploading file ${file.name}:`, fileError)
-          toast.error(`Failed to upload ${file.name}`)
+          console.log('Upload successful:', publicUrl)
+        } catch (error: any) {
+          console.error(`Error uploading file ${file.name}:`, error)
+          toast.error(`Failed to upload ${file.name}: ${error.message}`)
         }
       }
 
@@ -153,14 +168,11 @@ export function ProductForm({ initialData }: Props) {
         toast.success(`Successfully uploaded ${uploadedUrls.length} image(s)`)
       }
     } catch (error: any) {
-      console.error('General upload error:', error)
-      toast.error("Upload failed: Check your connection or permissions")
+      console.error('Critical upload process error:', error)
+      toast.error("Upload process encountered an error")
     } finally {
       setIsUploading(false)
-      // Safety delay to ensure state propagates before resetting input
-      setTimeout(() => {
-        if (e.target) e.target.value = ''
-      }, 100)
+      if (e.target) e.target.value = ''
     }
   }
 
@@ -181,17 +193,13 @@ export function ProductForm({ initialData }: Props) {
   }
 
   async function onSubmit(data: ProductFormValues) {
+    if (!user) {
+      toast.error("You must be logged in to save a product")
+      return
+    }
+
     setIsLoading(true)
-
     try {
-      // Get current user (seller)
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        toast.error("You must be logged in to create a product")
-        return
-      }
-
       // Convert specs array to object
       const specsObject = data.specs.reduce((acc, spec) => {
         acc[spec.key] = spec.value
@@ -203,7 +211,7 @@ export function ProductForm({ initialData }: Props) {
         brand: data.brand,
         description: data.description || null,
         price: data.price,
-        original_price: data.original_price,
+        original_price: data.original_price ?? null,
         stock: data.stock,
         badge: data.badge || null,
         images: data.images,
@@ -213,71 +221,44 @@ export function ProductForm({ initialData }: Props) {
 
       let productId = initialData?.id
 
-      if (initialData) {
-        // Update existing product
-        const { error } = await supabase
-          .from("products")
-          .update(productData)
-          .eq("id", initialData.id)
-
-        if (error) throw error
+      if (initialData?.id) {
+        await ProductService.updateProduct(supabase, initialData.id, productData as any)
       } else {
-        // Create new product
-        const { data: newProduct, error } = await supabase
-          .from("products")
-          .insert(productData)
-          .select()
-          .single()
-
-        if (error) throw error
+        const newProduct = await ProductService.createProduct(supabase, productData as any)
         productId = newProduct.id
       }
 
-      // Handle Auction creation/update
+      // Handle Auction creation/update via AuctionService
       if (data.isAuction) {
-        console.log("Creating/Updating auction for product:", productId)
         const auctionData = {
-          product_id: productId,
+          product_id: productId!,
           seller_id: user.id,
-          starting_bid: data.starting_bid,
-          reserve_price: data.reserve_price,
-          start_time: data.start_time?.toISOString(),
-          end_time: data.end_time?.toISOString(),
-          status: 'active'
+          starting_bid: data.starting_bid || 0,
+          reserve_price: data.reserve_price ?? null,
+          start_time: data.start_time?.toISOString() || null,
+          end_time: data.end_time?.toISOString() || null,
+          status: 'active' as const
         }
 
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
 
         if (existingAuction) {
-          console.log("Updating existing auction:", existingAuction.id)
-          const { error } = await supabase
-            .from("auctions")
-            .update(auctionData)
-            .eq("id", existingAuction.id)
-          if (error) throw error
+          await AuctionService.updateAuction(supabase, existingAuction.id, auctionData)
         } else {
-          console.log("Inserting new auction")
-          const { error } = await supabase
-            .from("auctions")
-            .insert(auctionData)
-          if (error) throw error
+          await AuctionService.createAuction(supabase, auctionData)
         }
       } else {
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
         if (existingAuction) {
-          console.log("Cancelling existing auction:", existingAuction.id)
-          await supabase
-            .from("auctions")
-            .update({ status: 'cancelled' })
-            .eq("id", existingAuction.id)
+          await AuctionService.cancelAuction(supabase, existingAuction.id)
         }
       }
 
-      toast.success(initialData ? "Product updated successfully" : "Product created successfully")
+      toast.success(initialData?.id ? "Product updated successfully" : "Product created successfully")
       router.push("/admin/products")
       router.refresh()
     } catch (error: any) {
-      console.error("Full submission error details:", error)
+      console.error("Submission error:", error)
       toast.error(error.message || "Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)

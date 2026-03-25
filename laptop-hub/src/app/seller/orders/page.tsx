@@ -9,22 +9,18 @@ import {
 } from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/server"
 
+import { AuthService } from "@/services/auth-service"
+import { OrderService } from "@/services/order-service"
+
 export default async function SellerOrdersPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
-  // Start building the query
-  // We want to find order items where the product belongs to the seller
-  // Then get the associated order details
-  const { data: orderItems } = await supabase
-    .from("order_items")
-    .select(`
-      *,
-      products!inner(name, seller_id),
-      orders!inner(id, created_at, status, total_amount, customer_id, shipping_address)
-    `)
-    .eq("products.seller_id", user?.id)
-    .order("created_at", { ascending: false })
+  if (!user) {
+    return <div>Please log in to view your sales.</div>
+  }
+
+  const orderItems = await OrderService.getSellerOrderItems(supabase, user.id)
 
   return (
     <div className="space-y-4">
@@ -45,7 +41,7 @@ export default async function SellerOrdersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orderItems?.map((item) => {
+            {orderItems?.map((item: any) => {
                // Type assertions query result
                const product = item.products as unknown as { name: string }
                const order = item.orders as unknown as { 

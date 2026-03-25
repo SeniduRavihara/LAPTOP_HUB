@@ -10,10 +10,13 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AuctionService } from "@/services/auction-service";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AuctionDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const { user } = useAuth();
   const [auction, setAuction] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBidding, setIsBidding] = useState(false);
@@ -26,17 +29,7 @@ export default function AuctionDetailPage() {
     async function fetchAuction() {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("auctions")
-          .select(`
-            *,
-            products (*),
-            bids (*)
-          `)
-          .eq("id", id)
-          .single();
-
-        if (error) throw error;
+        const data = await AuctionService.getAuctionById(supabase, id);
         
         const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
         setAuction({
@@ -96,21 +89,12 @@ export default function AuctionDetailPage() {
 
     setIsBidding(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to place a bid");
         return;
       }
 
-      const { error } = await supabase
-        .from("bids")
-        .insert({
-          auction_id: id,
-          bidder_id: user.id,
-          amount: amount,
-        });
-
-      if (error) throw error;
+      await AuctionService.placeBid(supabase, id, user.id, amount);
       toast.success("Bid placed successfully!");
       setBidAmount("");
     } catch (error: any) {

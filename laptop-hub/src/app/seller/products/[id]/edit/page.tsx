@@ -1,6 +1,8 @@
 import { ProductForm } from "@/components/admin/product-form"
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
+import { AuthService } from "@/services/auth-service"
+import { ProductService } from "@/services/product-service"
 
 export default async function SellerEditProductPage({
   params,
@@ -9,17 +11,13 @@ export default async function SellerEditProductPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await AuthService.getUser(supabase)
 
   if (!user) {
     // redirect("/login")
   }
 
-  const { data: product } = await supabase
-    .from("products")
-    .select("*, auction:auctions(*)")
-    .eq("id", id)
-    .single()
+  const product = await ProductService.getProductById(supabase, id)
 
   if (!product) {
     notFound()

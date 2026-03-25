@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import {
     Table,
     TableBody,
@@ -35,6 +37,7 @@ export default async function AuctionsPage() {
               <TableHead>Current Bid</TableHead>
               <TableHead>Total Bids</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -55,12 +58,19 @@ export default async function AuctionsPage() {
                       {auction.status}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/admin/products/${auction.product_id}/edit`}>
+                        Edit Product
+                      </Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               )
             })}
              {auctions?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center h-24">
+                <TableCell colSpan={8} className="text-center h-24">
                   No auctions found.
                 </TableCell>
               </TableRow>
