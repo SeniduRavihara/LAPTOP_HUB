@@ -1,8 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ProductDetailPageProps {
   product: any;
@@ -12,6 +15,8 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const { addToCart } = useCart();
+  const router = useRouter();
 
   if (!product) return null;
 
@@ -192,7 +197,25 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                 </div>
               </div>
 
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg">
+              <Button 
+                onClick={() => {
+                  addToCart({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    image: images[0],
+                    brand: product.brand
+                  });
+                  toast.success(`${product.name} added to cart!`, {
+                    action: {
+                      label: "View Cart",
+                      onClick: () => router.push("/cart")
+                    }
+                  });
+                }}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg"
+              >
                 Add to Cart
               </Button>
 

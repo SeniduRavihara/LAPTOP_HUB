@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -10,6 +11,7 @@ import { useState } from "react";
 export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { user, signOut } = useAuth();
+  const { cartCount } = useCart();
   const pathname = usePathname();
 
   // Hide navbar elements on auth pages
@@ -87,7 +89,7 @@ export function Navbar() {
                     />
                   </svg>
                   <span className="absolute -top-2 -right-2 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
-                    0
+                    {cartCount}
                   </span>
                 </Link>
               </>

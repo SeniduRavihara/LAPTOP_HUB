@@ -70,4 +70,38 @@ export class OrderService {
             "Update timed out"
         );
     }
+
+    /**
+     * Creates a new order with order items
+     */
+    static async createOrder(supabase: any, orderData: any, items: any[]) {
+        return withTimeout(
+            async () => {
+                const { data: order, error: orderError } = await supabase
+                    .from("orders")
+                    .insert([orderData])
+                    .select()
+                    .single();
+
+                if (orderError) throw orderError;
+
+                const orderItems = items.map((item) => ({
+                    order_id: order.id,
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                }));
+
+                const { error: itemsError } = await supabase
+                    .from("order_items")
+                    .insert(orderItems);
+
+                if (itemsError) throw itemsError;
+
+                return order;
+            },
+            30000,
+            "Order creation timed out"
+        );
+    }
 }

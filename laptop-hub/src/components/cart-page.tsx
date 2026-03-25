@@ -1,33 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function CartPage() {
-  const cartItems = [
-    {
-      id: 1,
-      name: "Dell XPS 13 Plus",
-      price: 1299,
-      quantity: 1,
-      image: "/placeholder.svg?key=6xdaw",
-    },
-    {
-      id: 2,
-      name: "MacBook Air M2",
-      price: 1199,
-      quantity: 1,
-      image: "/placeholder.svg?key=88r7h",
-    },
-  ];
+  const { cartItems, updateQuantity, removeFromCart, cartTotal } = useCart();
+  const router = useRouter();
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const subtotal = cartTotal;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
-  const shipping = subtotal > 100 ? 0 : 9.99;
+  const shipping = subtotal > 50000 || cartItems.length === 0 ? 0 : 2500; // Example LKR values
   const total = subtotal + tax + shipping;
 
   return (
@@ -71,22 +56,29 @@ export function CartPage() {
                         {item.name}
                       </h3>
                       <p className="text-lg font-bold text-primary">
-                        ${item.price}
+                        LKR {item.price.toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center border border-border rounded-lg">
-                        <button className="px-2 py-1 hover:bg-secondary">
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="px-2 py-1 hover:bg-secondary"
+                        >
                           −
                         </button>
-                        <span className="px-3 py-1 border-l border-r border-border">
+                        <span className="px-3 py-1 border-l border-r border-border min-w-[32px] text-center">
                           {item.quantity}
                         </span>
-                        <button className="px-2 py-1 hover:bg-secondary">
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="px-2 py-1 hover:bg-secondary"
+                        >
                           +
                         </button>
                       </div>
                       <Button
+                        onClick={() => removeFromCart(item.id)}
                         variant="outline"
                         className="border border-border text-destructive hover:bg-destructive/10"
                       >
@@ -110,24 +102,24 @@ export function CartPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold text-foreground">
-                  ${subtotal.toFixed(2)}
+                  LKR {subtotal.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tax (8%)</span>
                 <span className="font-semibold text-foreground">
-                  ${tax.toFixed(2)}
+                  LKR {tax.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
                 <span className="font-semibold text-foreground">
-                  {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
+                  {shipping === 0 ? "Free" : `LKR ${shipping.toLocaleString()}`}
                 </span>
               </div>
               {shipping > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Free shipping on orders over $100
+                  Free shipping on orders over LKR 50,000
                 </p>
               )}
             </div>
@@ -135,10 +127,14 @@ export function CartPage() {
               <div className="flex justify-between items-center mb-6">
                 <span className="font-semibold text-foreground">Total</span>
                 <span className="text-2xl font-bold text-primary">
-                  ${total.toFixed(2)}
+                  LKR {total.toLocaleString()}
                 </span>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base">
+              <Button 
+                onClick={() => router.push("/checkout")}
+                disabled={cartItems.length === 0}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base"
+              >
                 Proceed to Checkout
               </Button>
             </div>
