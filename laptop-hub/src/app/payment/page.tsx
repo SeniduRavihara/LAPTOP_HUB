@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
@@ -17,20 +18,28 @@ export default function PaymentPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [shippingInfo, setShippingInfo] = useState<any>(null);
+  const [payHereParams, setPayHereParams] = useState<any>(null);
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const info = sessionStorage.getItem("shipping_info");
     if (!info || cartItems.length === 0) {
-      router.push("/checkout");
+      if (!isSuccess) router.push("/checkout");
       return;
     }
     setShippingInfo(JSON.parse(info));
-  }, [cartItems, router]);
+  }, [cartItems, router, isSuccess]);
+
+  // Auto-submit form when params are ready
+  useEffect(() => {
+    if (payHereParams && formRef.current) {
+      formRef.current.submit();
+    }
+  }, [payHereParams]);
 
   const subtotal = cartTotal;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
@@ -38,34 +47,33 @@ export default function PaymentPage() {
   const total = subtotal + tax + shipping;
 
   const handlePayment = async () => {
+    if (!shippingInfo) return;
     setIsProcessing(true);
     
     try {
-      // Simulate PayHere Redirect and Callback
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
       const orderData = {
         customer_id: user?.id,
+        customer_name: shippingInfo.fullName,
+        customer_email: shippingInfo.email,
         total_amount: total,
-        status: "pending", // Will be updated to 'paid' after successful simulation
+        status: "pending",
         shipping_address: `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.postalCode}`,
         contact_phone: shippingInfo.phone,
-        customer_email: shippingInfo.email
       };
 
-      const order = await OrderService.createOrder(supabase, orderData, cartItems);
-      
-      // Update order status to 'paid' in simulation
-      await OrderService.updateOrderStatus(supabase, order.id, "paid");
+      const { initializePayHerePayment } = await import("@/app/actions/payhere");
+      const result = await initializePayHerePayment(orderData, cartItems);
 
-      setIsSuccess(true);
-      clearCart();
-      sessionStorage.removeItem("shipping_info");
-      toast.success("Payment successful! Your order has been placed.");
+      if (result.success && result.params) {
+        setPayHereParams(result);
+        toast.info("Redirecting to PayHere...");
+        // The useEffect will handle the form submission
+      } else {
+        throw new Error(result.error || "Failed to initialize payment.");
+      }
     } catch (error: any) {
       console.error("Payment failed:", error);
-      toast.error("Payment failed. Please try again.");
-    } finally {
+      toast.error(error.message || "Payment initialization failed. Please try again.");
       setIsProcessing(false);
     }
   };
@@ -174,8 +182,22 @@ export default function PaymentPage() {
                   </div>
                 </div>
 
+                {/* Hidden PayHere Form */}
+                {payHereParams && (
+                  <form 
+                    ref={formRef}
+                    method="post" 
+                    action={payHereParams.url}
+                    className="hidden"
+                  >
+                    {Object.entries(payHereParams.params).map(([key, value]) => (
+                      <input key={key} type="hidden" name={key} value={value as string} />
+                    ))}
+                  </form>
+                )}
+
                 <p className="text-xs text-muted-foreground text-center italic">
-                  * For demonstration purposes, clicking Pay with PayHere will simulate a successful payment flow.
+                  * Secure payment processing via PayHere gateway.
                 </p>
               </div>
             </div>

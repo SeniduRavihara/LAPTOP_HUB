@@ -10,8 +10,24 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient()
     await AuthService.exchangeCodeForSession(supabase, code)
+    
+    // Fetch profile to determine redirect
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin') {
+        return NextResponse.redirect(`${origin}/admin/dashboard`)
+      } else if (profile?.role === 'seller') {
+        return NextResponse.redirect(`${origin}/seller/dashboard`)
+      }
+    }
   }
 
-  // URL to redirect to after sign in process completes
+  // Fallback redirect
   return NextResponse.redirect(`${origin}/`)
 }

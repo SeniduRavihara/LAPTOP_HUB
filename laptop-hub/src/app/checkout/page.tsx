@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
@@ -25,11 +26,22 @@ export default function CheckoutPage() {
     postalCode: "",
   });
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [payHereParams, setPayHereParams] = useState<any>(null);
+  const formRef = React.useRef<HTMLFormElement>(null);
+
   useEffect(() => {
     if (cartItems.length === 0) {
       router.push("/cart");
     }
   }, [cartItems, router]);
+
+  // Auto-submit form when params are ready
+  useEffect(() => {
+    if (payHereParams && formRef.current) {
+      formRef.current.submit();
+    }
+  }, [payHereParams]);
 
   const subtotal = cartTotal;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
@@ -41,12 +53,39 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we would validate here and then proceed to payment
-    // We'll store the shipping info in sessionStorage for the payment page
-    sessionStorage.setItem("shipping_info", JSON.stringify(formData));
-    router.push("/payment");
+    setIsProcessing(true);
+
+    try {
+      const orderData = {
+        customer_id: user?.id,
+        customer_name: formData.fullName,
+        customer_email: formData.email,
+        total_amount: total,
+        status: "pending",
+        shipping_address: {
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+        },
+        contact_phone: formData.phone,
+      };
+
+      const { initializePayHerePayment } = await import("@/app/actions/payhere");
+      const result = await initializePayHerePayment(orderData, cartItems);
+
+      if (result.success && result.params) {
+        setPayHereParams(result);
+        // sessionStorage.setItem("shipping_info", JSON.stringify(formData)); // Not needed anymore as we redirect
+      } else {
+        throw new Error(result.error || "Failed to initialize payment.");
+      }
+    } catch (error: any) {
+      console.error("Payment initialization failed:", error);
+      alert(error.message || "Something went wrong. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -193,10 +232,25 @@ export default function CheckoutPage() {
                 <Button 
                   type="submit" 
                   form="checkout-form"
+                  disabled={isProcessing || cartItems.length === 0}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base"
                 >
-                  Proceed to Payment
+                  {isProcessing ? "Redirecting to PayHere..." : "Proceed to Payment"}
                 </Button>
+
+                {/* Hidden PayHere Form */}
+                {payHereParams && (
+                  <form 
+                    ref={formRef}
+                    method="post" 
+                    action={payHereParams.url}
+                    className="hidden"
+                  >
+                    {Object.entries(payHereParams.params).map(([key, value]) => (
+                      <input key={key} type="hidden" name={key} value={value as string} />
+                    ))}
+                  </form>
+                )}
                 <Link href="/cart">
                   <Button variant="ghost" className="w-full mt-4 text-muted-foreground hover:text-foreground">
                     Back to Cart

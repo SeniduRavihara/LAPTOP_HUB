@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge"
 import { OrderStatusSelect } from "@/components/admin/order-status-select"
 import {
     Table,
@@ -33,6 +34,7 @@ export default async function OrdersPage() {
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
               <TableHead>Date</TableHead>
             </TableRow>
           </TableHeader>
@@ -50,13 +52,18 @@ export default async function OrdersPage() {
                   <TableCell>
                     <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                   </TableCell>
+                  <TableCell>
+                    <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                      {order.payment_status}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{formattedDate}</TableCell>
                 </TableRow>
               )
             })}
              {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
+                <TableCell colSpan={6} className="text-center h-24"> {/* Updated colSpan from 5 to 6 */}
                   No orders found.
                 </TableCell>
               </TableRow>

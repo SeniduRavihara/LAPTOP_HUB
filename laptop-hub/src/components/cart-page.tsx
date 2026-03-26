@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
@@ -38,54 +39,12 @@ export function CartPage() {
             ) : (
               <div className="divide-y divide-border">
                 {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-6 flex gap-6 hover:bg-secondary/50 transition-colors"
-                  >
-                    <div className="relative w-24 h-24 bg-secondary rounded-lg flex-shrink-0 overflow-hidden">
-                      <Image
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        fill
-                        sizes="100px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground mb-2">
-                        {item.name}
-                      </h3>
-                      <p className="text-lg font-bold text-primary">
-                        LKR {item.price.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center border border-border rounded-lg">
-                        <button 
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="px-2 py-1 hover:bg-secondary"
-                        >
-                          −
-                        </button>
-                        <span className="px-3 py-1 border-l border-r border-border min-w-[32px] text-center">
-                          {item.quantity}
-                        </span>
-                        <button 
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="px-2 py-1 hover:bg-secondary"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <Button
-                        onClick={() => removeFromCart(item.id)}
-                        variant="outline"
-                        className="border border-border text-destructive hover:bg-destructive/10"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
+                  <CartItemComponent 
+                    key={item.id} 
+                    item={item} 
+                    updateQuantity={updateQuantity} 
+                    removeFromCart={removeFromCart} 
+                  />
                 ))}
               </div>
             )}
@@ -146,6 +105,64 @@ export function CartPage() {
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CartItemComponent({ item, updateQuantity, removeFromCart }: any) {
+  const [imgSrc, setImgSrc] = React.useState(item.image || "/placeholder.svg");
+
+  return (
+    <div className="p-6 flex gap-6 hover:bg-secondary/50 transition-colors">
+      <div className="relative w-24 h-24 bg-secondary rounded-lg flex-shrink-0 overflow-hidden border border-border/50">
+        <Image
+          src={imgSrc}
+          alt={item.name}
+          fill
+          unoptimized
+          sizes="100px"
+          className="object-cover"
+          onError={() => {
+            console.log(`Cart item image failed to load: ${imgSrc}`);
+            setImgSrc("/placeholder.svg");
+          }}
+        />
+      </div>
+      <div className="flex-1">
+        <p className="text-xs text-muted-foreground font-medium mb-1">{item.brand}</p>
+        <h3 className="font-semibold text-foreground mb-2 line-clamp-1">
+          {item.name}
+        </h3>
+        <p className="text-lg font-bold text-primary">
+          LKR {item.price.toLocaleString()}
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center border border-border rounded-lg">
+          <button 
+            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+            className="px-2 py-1 hover:bg-secondary text-foreground"
+          >
+            −
+          </button>
+          <span className="px-3 py-1 border-l border-r border-border min-w-[32px] text-center text-foreground font-medium">
+            {item.quantity}
+          </span>
+          <button 
+            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+            className="px-2 py-1 hover:bg-secondary text-foreground"
+          >
+            +
+          </button>
+        </div>
+        <Button
+          onClick={() => removeFromCart(item.id)}
+          variant="outline"
+          className="border border-border text-destructive hover:bg-destructive/10"
+        >
+          Remove
+        </Button>
       </div>
     </div>
   );

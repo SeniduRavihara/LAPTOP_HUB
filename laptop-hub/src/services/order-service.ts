@@ -16,7 +16,7 @@ export class OrderService {
                     .select(`
                         *,
                         products!inner(name, seller_id),
-                        orders!inner(id, created_at, status, total_amount, customer_id, shipping_address)
+                        orders!inner(id, created_at, status, payment_status, total_amount, customer_id, shipping_address)
                     `)
                     .eq("products.seller_id", sellerId)
                     .order("created_at", { ascending: false })
@@ -37,7 +37,7 @@ export class OrderService {
             () => supabase
                     .from("orders")
                     .select(`
-                        *,
+                        id, created_at, status, payment_status, total_amount, customer_id, shipping_address,
                         order_items(*, products(name))
                     `)
                     .eq("customer_id", userId)
@@ -80,7 +80,7 @@ export class OrderService {
                 const { data: order, error: orderError } = await supabase
                     .from("orders")
                     .insert([orderData])
-                    .select()
+                    .select("*")
                     .single();
 
                 if (orderError) throw orderError;
@@ -90,6 +90,7 @@ export class OrderService {
                     product_id: item.id,
                     quantity: item.quantity,
                     unit_price: item.price,
+                    total_price: item.price * item.quantity,
                 }));
 
                 const { error: itemsError } = await supabase

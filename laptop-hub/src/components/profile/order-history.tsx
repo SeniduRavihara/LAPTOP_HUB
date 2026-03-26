@@ -14,11 +14,12 @@ import { OrderService } from "@/services/order-service"
 
 export async function OrderHistory() {
   const supabase = await createClient()
-  const user = await AuthService.getUser(supabase)
+  const user = (await AuthService.getUser(supabase)) as any
 
-  if (!user) return null
-
-  const orders = await OrderService.getUserOrders(supabase, user.id)
+  if (!user || !user.id) return null
+  
+  const ordersResponse = await OrderService.getUserOrders(supabase, user.id)
+  const orders = (ordersResponse || []) as any[]
 
   return (
     <div className="space-y-4">
@@ -30,6 +31,7 @@ export async function OrderHistory() {
               <TableHead>Order ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Payment</TableHead>
               <TableHead>Total Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -43,12 +45,17 @@ export async function OrderHistory() {
                     {order.status}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <Badge variant={order.payment_status === 'paid' ? 'default' : 'outline'}>
+                    {order.payment_status}
+                  </Badge>
+                </TableCell>
                 <TableCell>${order.total_amount}</TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center h-24">
+                <TableCell colSpan={5} className="text-center h-24">
                   No orders found.
                 </TableCell>
               </TableRow>
