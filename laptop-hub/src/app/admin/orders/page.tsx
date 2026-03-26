@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { OrderStatusSelect } from "@/components/admin/order-status-select"
+import { VerifyPaymentButton } from "@/components/admin/verify-payment-button"
 import {
     Table,
     TableBody,
@@ -62,9 +63,17 @@ export default async function OrdersPage() {
                     <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                   </TableCell>
                   <TableCell>
-                    <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
-                      {order.payment_status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="capitalize min-w-[70px] justify-center">
+                        {order.payment_status}
+                      </Badge>
+                      {! (order.payment_status === 'paid') && (
+                        <VerifyPaymentButton 
+                          paymentReference={order.payment_reference} 
+                          isPaid={false} 
+                        />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{formattedDate}</TableCell>
                 </TableRow>
