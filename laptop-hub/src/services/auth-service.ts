@@ -1,4 +1,5 @@
 import { withTimeout } from "@/lib/utils/timeout";
+import { getURL } from "@/lib/utils/url";
 
 /**
  * AuthService
@@ -31,7 +32,7 @@ export class AuthService {
             () => supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
+                    redirectTo: `${getURL()}/auth/callback`,
                 },
             }).then(({ data, error }: any) => {
                 if (error) throw error;
