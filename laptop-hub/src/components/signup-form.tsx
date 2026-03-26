@@ -13,6 +13,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { AuthService } from "@/services/auth-service";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 const signupSchema = z
   .object({
@@ -44,6 +46,15 @@ export function SignupForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { user, role } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (role === "admin") router.push("/admin/dashboard");
+      else if (role === "seller") router.push("/seller/dashboard");
+      else router.push("/");
+    }
+  }, [user, role, router]);
 
   const {
     register,
