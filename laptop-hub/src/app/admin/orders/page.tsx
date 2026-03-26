@@ -40,14 +40,23 @@ export default async function OrdersPage() {
           </TableHeader>
           <TableBody>
             {orders?.map((order) => {
-              // Try to get customer name from shipping_address if available
-              const customerName = (order.shipping_address as any)?.name || order.customer_id
+              const customerDisplay = order.customer_name || order.customer_email || order.customer_id
               const formattedDate = new Date(order.created_at).toLocaleDateString()
 
               return (
                 <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
-                  <TableCell>{customerName}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-primary">{order.payment_reference}</span>
+                      <span className="text-[10px] text-muted-foreground opacity-50">{order.id.slice(0, 8)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{customerDisplay}</span>
+                      <span className="text-xs text-muted-foreground">{order.customer_email}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>${order.total_amount}</TableCell>
                   <TableCell>
                     <OrderStatusSelect orderId={order.id} currentStatus={order.status} />

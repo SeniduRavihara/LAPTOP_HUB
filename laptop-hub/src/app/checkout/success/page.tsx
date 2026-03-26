@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PayHereRetrievalService } from "@/services/payhere/payhere-retrieval-service";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 
 interface SuccessPageProps {
@@ -47,7 +48,7 @@ async function VerifyPayment({ orderId }: { orderId: string }) {
   if (payHereOrder) {
     // 4. Update database if verified via API (webhook might be slow)
     console.log(`✅ Payment ${orderId} verified via API. Updating DB...`);
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         payment_status: "paid",
