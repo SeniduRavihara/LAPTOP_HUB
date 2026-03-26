@@ -12,8 +12,8 @@ import { AuctionService } from "@/services/auction-service";
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const products = await ProductService.getRecentProducts(supabase, 8);
-  const auctions = await AuctionService.getActiveAuctions(supabase, 4);
+  const products: any[] = (await ProductService.getRecentProducts(supabase, 8)) as any[];
+  const auctions: any[] = (await AuctionService.getActiveAuctions(supabase, 4)) as any[];
 
   return (
     <>

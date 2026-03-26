@@ -1,7 +1,7 @@
 import { withTimeout } from "@/lib/utils/timeout";
 
 export class AuctionService {
-    static async getActiveAuctions(supabase: any) {
+    static async getActiveAuctions(supabase: any, limit: number = 10) {
         return withTimeout(
             async () => {
                 const { data, error } = await supabase
@@ -12,7 +12,8 @@ export class AuctionService {
                         bids(amount)
                     `)
                     .eq("status", "active")
-                    .order("end_time", { ascending: true });
+                    .order("end_time", { ascending: true })
+                    .limit(limit);
 
                 if (error) {
                     console.error("Supabase error in getActiveAuctions:", error);

@@ -46,10 +46,10 @@ export function LoginForm() {
     try {
       await AuthService.signIn(supabase, data.email, data.password);
       
-      const user = await AuthService.getUser(supabase);
+      const user: any = await AuthService.getUser(supabase);
 
       if (user) {
-        const profile = await ProfileService.getUserProfile(supabase, user.id);
+        const profile: any = await ProfileService.getUserProfile(supabase, user.id);
 
         toast.success("Signed in successfully!");
 

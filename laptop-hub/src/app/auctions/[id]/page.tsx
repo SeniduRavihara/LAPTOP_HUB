@@ -29,7 +29,7 @@ export default function AuctionDetailPage() {
     async function fetchAuction() {
       setIsLoading(true);
       try {
-        const data = await AuctionService.getAuctionById(supabase, id);
+        const data: any = await AuctionService.getAuctionById(supabase, id);
         
         const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
         setAuction({
@@ -59,7 +59,7 @@ export default function AuctionDetailPage() {
           table: 'bids',
           filter: `auction_id=eq.${id}`
         },
-        (payload) => {
+        (payload: any) => {
           setAuction((prev: any) => {
             if (!prev) return prev;
             const newBid = payload.new;

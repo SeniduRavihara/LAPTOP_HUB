@@ -11,7 +11,7 @@ import { ProfileService } from "@/services/profile-service"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  const user = await AuthService.getUser(supabase)
+  const user: any = await AuthService.getUser(supabase)
 
   if (!user) {
     redirect("/login")

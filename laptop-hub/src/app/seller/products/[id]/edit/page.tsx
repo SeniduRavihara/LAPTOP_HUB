@@ -11,13 +11,13 @@ export default async function SellerEditProductPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const user = await AuthService.getUser(supabase)
+  const user: any = await AuthService.getUser(supabase)
 
   if (!user) {
     // redirect("/login")
   }
 
-  const product = await ProductService.getProductById(supabase, id)
+  const product: any = await ProductService.getProductById(supabase, id)
 
   if (!product) {
     notFound()

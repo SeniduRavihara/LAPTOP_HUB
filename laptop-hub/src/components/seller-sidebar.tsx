@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'link'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSidebar } from './providers/sidebar-provider'
 import { AuthService } from '@/services/auth-service'

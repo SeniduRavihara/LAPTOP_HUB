@@ -34,12 +34,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const setData = async () => {
       try {
-        const session = await AuthService.getSession(supabase)
+        const session: any = await AuthService.getSession(supabase)
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const profile = await ProfileService.getUserProfile(supabase, session.user.id)
+          const profile: any = await ProfileService.getUserProfile(supabase, session.user.id)
           setRole(profile?.role ?? 'customer')
         } else {
           setRole(null)
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        const profile = await ProfileService.getUserProfile(supabase, session.user.id)
+        const profile: any = await ProfileService.getUserProfile(supabase, session.user.id)
         setRole(profile?.role ?? 'customer')
       } else {
         setRole(null)

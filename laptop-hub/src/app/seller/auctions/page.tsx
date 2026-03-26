@@ -14,13 +14,13 @@ import { AuctionService } from "@/services/auction-service"
 
 export default async function SellerAuctionsPage() {
   const supabase = await createClient()
-  const user = await AuthService.getUser(supabase)
+  const user: any = await AuthService.getUser(supabase)
 
   if (!user) {
     return <div>Please log in to view your auctions.</div>
   }
 
-  const auctions = await AuctionService.getSellerAuctions(supabase, user.id)
+  const auctions = (await AuctionService.getSellerAuctions(supabase, user.id)) as any[]
 
   return (
     <div className="space-y-4">

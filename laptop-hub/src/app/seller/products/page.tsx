@@ -16,13 +16,13 @@ import { ProductService } from "@/services/product-service"
 
 export default async function SellerProductsPage() {
   const supabase = await createClient()
-  const user = await AuthService.getUser(supabase)
+  const user: any = await AuthService.getUser(supabase)
 
   if (!user) {
     return <div>Please log in to view your products.</div>
   }
 
-  const products = await ProductService.getSellerProducts(supabase, user.id)
+  const products = (await ProductService.getSellerProducts(supabase, user.id)) as any[]
 
   return (
     <div className="space-y-4">

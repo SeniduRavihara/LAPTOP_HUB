@@ -224,7 +224,7 @@ export function ProductForm({ initialData }: Props) {
       if (initialData?.id) {
         await ProductService.updateProduct(supabase, initialData.id, productData as any)
       } else {
-        const newProduct = await ProductService.createProduct(supabase, productData as any)
+        const newProduct: any = await ProductService.createProduct(supabase, productData as any)
         productId = newProduct.id
       }
 
