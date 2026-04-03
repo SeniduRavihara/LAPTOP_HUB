@@ -13,7 +13,7 @@ export default async function ProductDetail({
   const { id } = await params;
   const supabase = await createClient();
 
-  const product: any = await ProductService.getProductById(supabase, id);
+  const product: any = await ProductService.getProductById(id, supabase);
 
   if (!product) {
     notFound();

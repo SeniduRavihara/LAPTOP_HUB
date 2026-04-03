@@ -20,7 +20,7 @@ export default async function SellerAuctionsPage() {
     return <div>Please log in to view your auctions.</div>
   }
 
-  const auctions = (await AuctionService.getSellerAuctions(supabase, user.id)) as any[]
+  const auctions = (await AuctionService.getSellerAuctions(user.id, supabase)) as any[]
 
   return (
     <div className="space-y-4">

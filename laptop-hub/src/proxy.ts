@@ -29,10 +29,15 @@ export async function proxy(request: NextRequest) {
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser().
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  
+  // Wrap in a try/catch block to avoid hanging the entire request
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user || null;
+  } catch (err) {
+    console.error("❌ Middleware Auth Error:", err);
+  }
 
   const isPublicRoute = 
     request.nextUrl.pathname === '/' ||

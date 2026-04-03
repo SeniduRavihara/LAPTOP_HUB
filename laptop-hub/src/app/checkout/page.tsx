@@ -11,16 +11,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { Address, AddressService } from "@/services/address-service";
-import { createClient } from "@/lib/supabase/client";
 import { MapPin, Plus, CheckCircle2 } from "lucide-react";
+import { Address, AddressService } from "@/services/address-service";
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal } = useCart();
   const { user } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -50,7 +47,7 @@ export default function CheckoutPage() {
     async function loadAddresses() {
       if (user) {
         try {
-          const data = await AddressService.getAddresses(supabase, user.id);
+          const data = await AddressService.getAddresses(user.id);
           setAddresses(data);
           
           // Auto-select default address
@@ -73,7 +70,7 @@ export default function CheckoutPage() {
       }
     }
     loadAddresses();
-  }, [user, supabase]);
+  }, [user]);
 
   const updateFormFromAddress = (address: Address) => {
     setFormData({

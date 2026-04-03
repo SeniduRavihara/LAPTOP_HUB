@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    await AuthService.exchangeCodeForSession(supabase, code)
+    await AuthService.exchangeCodeForSession(code, supabase)
     
     // Fetch profile to determine redirect
     const { data: { user } } = await supabase.auth.getUser()

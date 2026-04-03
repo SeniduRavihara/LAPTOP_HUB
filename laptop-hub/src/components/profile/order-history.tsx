@@ -18,7 +18,7 @@ export async function OrderHistory() {
 
   if (!user || !user.id) return null
   
-  const ordersResponse = await OrderService.getUserOrders(supabase, user.id)
+  const ordersResponse = await OrderService.getUserOrders(user.id, supabase)
   const orders = (ordersResponse || []) as any[]
 
   return (

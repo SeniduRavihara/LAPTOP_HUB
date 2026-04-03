@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Address, AddressService } from "@/services/address-service";
-import { createClient } from "@/lib/supabase/client";
 
 const addressSchema = z.object({
   street_line_1: z.string().min(1, "Address is required"),
@@ -33,7 +32,6 @@ interface AddressFormProps {
 
 export function AddressForm({ userId, initialData, onSuccess, onCancel }: AddressFormProps) {
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -60,13 +58,13 @@ export function AddressForm({ userId, initialData, onSuccess, onCancel }: Addres
     setLoading(true);
     try {
       if (initialData?.id) {
-        await AddressService.updateAddress(supabase, initialData.id, {
+        await AddressService.updateAddress(initialData.id, {
           ...data,
           user_id: userId,
         });
         toast.success("Address updated successfully");
       } else {
-        await AddressService.createAddress(supabase, {
+        await AddressService.createAddress({
           ...data,
           user_id: userId,
           country: "Sri Lanka",

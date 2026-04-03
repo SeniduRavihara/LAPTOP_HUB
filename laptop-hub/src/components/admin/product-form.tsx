@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarIcon, Loader2, Plus, Trash2, Upload, X } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -74,7 +74,6 @@ type Props = {
 export function ProductForm({ initialData }: Props) {
   const router = useRouter()
   const { user } = useAuth()
-  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   
@@ -153,7 +152,7 @@ export function ProductForm({ initialData }: Props) {
       for (const file of filesArray) {
         try {
           console.log(`Uploading file: ${file.name}...`)
-          const publicUrl = await ProductService.uploadImage(supabase, file, user.id)
+          const publicUrl = await ProductService.uploadImage(file, user.id)
           uploadedUrls.push(publicUrl)
           console.log('Upload successful:', publicUrl)
         } catch (error: any) {
@@ -222,9 +221,9 @@ export function ProductForm({ initialData }: Props) {
       let productId = initialData?.id
 
       if (initialData?.id) {
-        await ProductService.updateProduct(supabase, initialData.id, productData as any)
+        await ProductService.updateProduct(initialData.id, productData as any)
       } else {
-        const newProduct: any = await ProductService.createProduct(supabase, productData as any)
+        const newProduct: any = await ProductService.createProduct(productData as any)
         productId = newProduct.id
       }
 
@@ -243,14 +242,14 @@ export function ProductForm({ initialData }: Props) {
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
 
         if (existingAuction) {
-          await AuctionService.updateAuction(supabase, existingAuction.id, auctionData)
+          await AuctionService.updateAuction(existingAuction.id, auctionData)
         } else {
-          await AuctionService.createAuction(supabase, auctionData)
+          await AuctionService.createAuction(auctionData)
         }
       } else {
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
         if (existingAuction) {
-          await AuctionService.cancelAuction(supabase, existingAuction.id)
+          await AuctionService.cancelAuction(existingAuction.id)
         }
       }
 

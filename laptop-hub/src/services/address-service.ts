@@ -1,4 +1,4 @@
-import { withTimeout } from "@/lib/utils/timeout";
+import { supabase as browserClient } from "@/lib/supabase/client";
 
 export interface Address {
   id: string;
@@ -18,103 +18,103 @@ export class AddressService {
   /**
    * Fetches all addresses for a user
    */
-  static async getAddresses(supabase: any, userId: string): Promise<Address[]> {
-    return withTimeout(
-      () =>
-        supabase
-          .from("addresses")
-          .select("*")
-          .eq("user_id", userId)
-          .order("is_default", { ascending: false })
-          .order("created_at", { ascending: false })
-          .then(({ data, error }: any) => {
-            if (error) throw error;
-            return data || [];
-          }),
-      20000,
-      "Request timed out"
-    );
+  static async getAddresses(userId: string, supabaseOverride?: any): Promise<Address[]> {
+    const supabase = supabaseOverride || browserClient;
+    try {
+      const { data, error } = await supabase
+        .from("addresses")
+        .select("*")
+        .eq("user_id", userId)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('AddressService.getAddresses error:', error);
+      return [];
+    }
   }
 
   /**
    * Creates a new address for a user
    */
-  static async createAddress(supabase: any, addressData: Partial<Address>) {
-    return withTimeout(
-      () =>
-        supabase
-          .from("addresses")
-          .insert([addressData])
-          .select()
-          .single()
-          .then(({ data, error }: any) => {
-            if (error) throw error;
-            return data;
-          }),
-      20000,
-      "Create timed out"
-    );
+  static async createAddress(addressData: Partial<Address>, supabaseOverride?: any) {
+    const supabase = supabaseOverride || browserClient;
+    try {
+      const { data, error } = await supabase
+        .from("addresses")
+        .insert([addressData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('AddressService.createAddress error:', error);
+      throw error;
+    }
   }
 
   /**
    * Updates an existing address
    */
-  static async updateAddress(supabase: any, addressId: string, addressData: Partial<Address>) {
-    return withTimeout(
-      () =>
-        supabase
-          .from("addresses")
-          .update(addressData)
-          .eq("id", addressId)
-          .select()
-          .single()
-          .then(({ data, error }: any) => {
-            if (error) throw error;
-            return data;
-          }),
-      20000,
-      "Update timed out"
-    );
+  static async updateAddress(addressId: string, addressData: Partial<Address>, supabaseOverride?: any) {
+    const supabase = supabaseOverride || browserClient;
+    try {
+      const { data, error } = await supabase
+        .from("addresses")
+        .update(addressData)
+        .eq("id", addressId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('AddressService.updateAddress error:', error);
+      throw error;
+    }
   }
 
   /**
    * Deletes an address
    */
-  static async deleteAddress(supabase: any, addressId: string) {
-    return withTimeout(
-      () =>
-        supabase
-          .from("addresses")
-          .delete()
-          .eq("id", addressId)
-          .then(({ error }: any) => {
-            if (error) throw error;
-          }),
-      20000,
-      "Delete timed out"
-    );
+  static async deleteAddress(addressId: string, supabaseOverride?: any) {
+    const supabase = supabaseOverride || browserClient;
+    try {
+      const { error } = await supabase
+        .from("addresses")
+        .delete()
+        .eq("id", addressId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('AddressService.deleteAddress error:', error);
+      throw error;
+    }
   }
 
   /**
    * Sets an address as default for a user
-   * (The database trigger handles unsetting other defaults)
    */
-  static async setDefaultAddress(supabase: any, userId: string, addressId: string) {
-    return withTimeout(
-      () =>
-        supabase
-          .from("addresses")
-          .update({ is_default: true })
-          .eq("id", addressId)
-          .eq("user_id", userId)
-          .select()
-          .single()
-          .then(({ data, error }: any) => {
-            if (error) throw error;
-            return data;
-          }),
-      20000,
-      "Update timed out"
-    );
+  static async setDefaultAddress(userId: string, addressId: string, supabaseOverride?: any) {
+    const supabase = supabaseOverride || browserClient;
+    try {
+      const { data, error } = await supabase
+        .from("addresses")
+        .update({ is_default: true })
+        .eq("id", addressId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('AddressService.setDefaultAddress error:', error);
+      throw error;
+    }
   }
 }

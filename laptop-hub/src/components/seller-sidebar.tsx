@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -12,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 export function SellerSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
   const { isCollapsed, toggle } = useSidebar()
   const { user } = useAuth()
 
@@ -28,7 +26,7 @@ export function SellerSidebar() {
   ]
 
   const handleLogout = async () => {
-    await AuthService.signOut(supabase)
+    await AuthService.signOut()
     router.push('/login')
     router.refresh()
   }

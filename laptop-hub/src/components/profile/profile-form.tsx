@@ -11,7 +11,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
@@ -37,7 +37,6 @@ interface ProfileFormProps {
 export function ProfileForm({ user, userData }: ProfileFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),

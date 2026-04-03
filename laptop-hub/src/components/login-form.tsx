@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -29,7 +28,6 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
   const { user, role } = useAuth();
 
   useEffect(() => {
@@ -55,12 +53,12 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormValues) => {
     setLoading(true);
     try {
-      await AuthService.signIn(supabase, data.email, data.password);
+      await AuthService.signIn(data.email, data.password);
       
-      const user: any = await AuthService.getUser(supabase);
+      const user: any = await AuthService.getUser();
 
       if (user) {
-        const profile: any = await ProfileService.getUserProfile(supabase, user.id);
+        const profile: any = await ProfileService.getUserProfile(user.id);
 
         toast.success("Signed in successfully!");
 
@@ -81,7 +79,7 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     try {
-      await AuthService.signInWithGoogle(supabase);
+      await AuthService.signInWithGoogle();
     } catch (error: any) {
       toast.error(error.message);
     }

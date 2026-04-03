@@ -20,7 +20,7 @@ export default async function SellerOrdersPage() {
     return <div>Please log in to view your sales.</div>
   }
 
-  const orderItemsData = await OrderService.getSellerOrderItems(supabase, user.id)
+  const orderItemsData = await OrderService.getSellerOrderItems(user.id, supabase)
   const orderItems = (orderItemsData || []) as any[]
 
   return (

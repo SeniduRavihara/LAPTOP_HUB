@@ -7,7 +7,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -24,7 +24,6 @@ const roles = [
 
 export function UserRoleSelect({ userId, currentRole }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const handleValueChange = async (value: string) => {
     try {

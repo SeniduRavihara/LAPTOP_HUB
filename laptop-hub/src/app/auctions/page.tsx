@@ -26,7 +26,7 @@ export default function AuctionsPage() {
     async function fetchAuctions() {
       setIsLoading(true);
       try {
-        const data = await AuctionService.getActiveAuctions(supabase);
+        const data = await AuctionService.getActiveAuctions(undefined, supabase);
 
         const formattedAuctions = (data || []).map((auction: any) => {
           const maxBid = (auction.bids || []).reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);

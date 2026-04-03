@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Address, AddressService } from "@/services/address-service";
-import { createClient } from "@/lib/supabase/client";
 import { Plus, MapPin, Edit2, Trash2, CheckCircle2 } from "lucide-react";
 import { AddressForm } from "./address-form";
 import {
@@ -34,19 +33,18 @@ export function AddressList({ userId }: AddressListProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
-  const supabase = createClient();
 
   const fetchAddresses = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await AddressService.getAddresses(supabase, userId);
+      const data = await AddressService.getAddresses(userId);
       setAddresses(data);
     } catch (error: any) {
       toast.error("Failed to load addresses");
     } finally {
       setLoading(false);
     }
-  }, [supabase, userId]);
+  }, [userId]);
 
   useEffect(() => {
     fetchAddresses();
@@ -54,7 +52,7 @@ export function AddressList({ userId }: AddressListProps) {
 
   const handleSetDefault = async (addressId: string) => {
     try {
-      await AddressService.setDefaultAddress(supabase, userId, addressId);
+      await AddressService.setDefaultAddress(userId, addressId);
       toast.success("Default address updated");
       fetchAddresses();
     } catch (error: any) {
@@ -65,7 +63,7 @@ export function AddressList({ userId }: AddressListProps) {
   const handleDelete = async () => {
     if (!deletingAddressId) return;
     try {
-      await AddressService.deleteAddress(supabase, deletingAddressId);
+      await AddressService.deleteAddress(deletingAddressId);
       toast.success("Address deleted");
       fetchAddresses();
     } catch (error: any) {

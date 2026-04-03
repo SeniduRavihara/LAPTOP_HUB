@@ -17,7 +17,7 @@ export default async function SellerEditProductPage({
     // redirect("/login")
   }
 
-  const product: any = await ProductService.getProductById(supabase, id)
+  const product: any = await ProductService.getProductById(id, supabase)
 
   if (!product) {
     notFound()

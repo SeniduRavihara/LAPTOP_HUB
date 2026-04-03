@@ -29,7 +29,7 @@ export default function AuctionDetailPage() {
     async function fetchAuction() {
       setIsLoading(true);
       try {
-        const data: any = await AuctionService.getAuctionById(supabase, id);
+        const data: any = await AuctionService.getAuctionById(id, supabase);
         
         const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
         setAuction({
@@ -94,7 +94,7 @@ export default function AuctionDetailPage() {
         return;
       }
 
-      await AuctionService.placeBid(supabase, id, user.id, amount);
+      await AuctionService.placeBid(id, user.id, amount, supabase);
       toast.success("Bid placed successfully!");
       setBidAmount("");
     } catch (error: any) {

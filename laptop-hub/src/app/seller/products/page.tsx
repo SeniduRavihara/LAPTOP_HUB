@@ -22,7 +22,7 @@ export default async function SellerProductsPage() {
     return <div>Please log in to view your products.</div>
   }
 
-  const products = (await ProductService.getSellerProducts(supabase, user.id)) as any[]
+  const products = (await ProductService.getSellerProducts(user.id, supabase)) as any[]
 
   return (
     <div className="space-y-4">

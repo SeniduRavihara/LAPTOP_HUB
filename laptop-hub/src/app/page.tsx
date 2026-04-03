@@ -25,12 +25,12 @@ export default async function HomePage(props: {
 
   let products: any[] | null = null;
   if (hasFilters) {
-    products = (await ProductService.searchProducts(supabase, { brands, processors, rams, minPrice, maxPrice })) as any[];
+    products = (await ProductService.searchProducts({ brands, processors, rams, minPrice, maxPrice }, supabase)) as any[];
   } else {
-    products = (await ProductService.getRecentProducts(supabase, 8)) as any[];
+    products = (await ProductService.getRecentProducts(8, supabase)) as any[];
   }
 
-  const auctions: any[] = (await AuctionService.getActiveAuctions(supabase, 4)) as any[];
+  const auctions: any[] = (await AuctionService.getActiveAuctions(4, supabase)) as any[];
 
   return (
     <>
@@ -69,6 +69,8 @@ export default async function HomePage(props: {
                   src="/laptop-hero.png" 
                   alt="Premium Laptops" 
                   fill 
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-black/10"></div>
