@@ -39,7 +39,7 @@ export class ProductService {
 
     static async searchProducts(supabase: any, filters: any) {
         return withTimeout(
-            (async () => {
+            async () => {
                 let query = supabase
                     .from('products')
                     .select('*, auctions(status, starting_bid, end_time, bids(amount))')
@@ -64,7 +64,7 @@ export class ProductService {
                 const { data, error } = await query;
                 if (error) throw error;
                 return data;
-            })(),
+            },
             15000,
             'Search request timed out.'
         );

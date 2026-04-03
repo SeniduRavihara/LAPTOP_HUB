@@ -1,5 +1,6 @@
 import { OrderHistory } from "@/components/profile/order-history"
 import { ProfileForm } from "@/components/profile/profile-form"
+import { AddressList } from "@/components/profile/address-list"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Separator } from "@/components/ui/separator"
@@ -36,6 +37,7 @@ export default async function ProfilePage() {
             <Tabs defaultValue="profile" className="space-y-6">
               <TabsList>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="addresses">Addresses</TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
               </TabsList>
               
@@ -49,6 +51,10 @@ export default async function ProfilePage() {
                     </div>
                     <ProfileForm user={user} userData={userData} />
                  </div>
+              </TabsContent>
+
+              <TabsContent value="addresses">
+                <AddressList userId={user.id} />
               </TabsContent>
               
               <TabsContent value="orders">

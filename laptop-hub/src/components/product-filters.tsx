@@ -138,22 +138,26 @@ export function ProductFilters() {
             onChange={(e) => setMaxPrice(e.target.value)}
             className="w-full accent-primary" 
           />
-          <div className="flex gap-2">
-            <input 
-              type="number" 
-              placeholder="Min" 
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background" 
-            />
-            <span className="text-muted-foreground py-2">-</span>
-            <input 
-              type="number" 
-              placeholder="Max" 
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background" 
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input 
+                type="number" 
+                placeholder="Min" 
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
+              />
+            </div>
+            <span className="text-muted-foreground flex-shrink-0">-</span>
+            <div className="relative flex-1">
+              <input 
+                type="number" 
+                placeholder="Max" 
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
+              />
+            </div>
           </div>
         </div>
       </div>
