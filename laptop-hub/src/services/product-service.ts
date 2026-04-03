@@ -37,6 +37,39 @@ export class ProductService {
         );
     }
 
+    static async searchProducts(supabase: any, filters: any) {
+        return withTimeout(
+            (async () => {
+                let query = supabase
+                    .from('products')
+                    .select('*, auctions(status, starting_bid, end_time, bids(amount))')
+                    .order('created_at', { ascending: false });
+
+                if (filters?.brands && filters.brands.length > 0) {
+                    query = query.in('brand', filters.brands);
+                }
+                if (filters?.minPrice) {
+                    query = query.gte('price', parseInt(filters.minPrice));
+                }
+                if (filters?.maxPrice) {
+                    query = query.lte('price', parseInt(filters.maxPrice));
+                }
+                if (filters?.processors && filters.processors.length > 0) {
+                    query = query.in('specs->>Processor', filters.processors);
+                }
+                if (filters?.rams && filters.rams.length > 0) {
+                    query = query.in('specs->>RAM', filters.rams);
+                }
+
+                const { data, error } = await query;
+                if (error) throw error;
+                return data;
+            })(),
+            15000,
+            'Search request timed out.'
+        );
+    }
+
     static async getSellerProducts(supabase: any, sellerId: string) {
         return withTimeout(
             () => supabase

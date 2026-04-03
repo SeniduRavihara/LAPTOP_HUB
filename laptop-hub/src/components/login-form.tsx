@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { AuthService } from "@/services/auth-service";
 import { ProfileService } from "@/services/profile-service";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -28,6 +30,15 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { user, role } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (role === "admin") router.push("/admin/dashboard");
+      else if (role === "seller") router.push("/seller/dashboard");
+      else router.push("/");
+    }
+  }, [user, role, router]);
 
   const {
     register,

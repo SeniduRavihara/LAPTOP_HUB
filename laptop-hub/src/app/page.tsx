@@ -9,10 +9,27 @@ import Link from "next/link";
 import { ProductService } from "@/services/product-service";
 import { AuctionService } from "@/services/auction-service";
 
-export default async function HomePage() {
+export default async function HomePage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient();
+  const searchParams = props.searchParams ? await props.searchParams : {};
 
-  const products: any[] = (await ProductService.getRecentProducts(supabase, 8)) as any[];
+  const brands = searchParams.brands ? (searchParams.brands as string).split(',') : undefined;
+  const processors = searchParams.processors ? (searchParams.processors as string).split(',') : undefined;
+  const rams = searchParams.rams ? (searchParams.rams as string).split(',') : undefined;
+  const minPrice = searchParams.minPrice as string | undefined;
+  const maxPrice = searchParams.maxPrice as string | undefined;
+
+  const hasFilters = brands || processors || rams || minPrice || maxPrice;
+
+  let products: any[] | null = null;
+  if (hasFilters) {
+    products = (await ProductService.searchProducts(supabase, { brands, processors, rams, minPrice, maxPrice })) as any[];
+  } else {
+    products = (await ProductService.getRecentProducts(supabase, 8)) as any[];
+  }
+
   const auctions: any[] = (await AuctionService.getActiveAuctions(supabase, 4)) as any[];
 
   return (
