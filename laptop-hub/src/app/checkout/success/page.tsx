@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, ArrowRight } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, ArrowRight, Truck } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PayHereRetrievalService } from "@/services/payhere/payhere-retrieval-service";
@@ -19,7 +19,7 @@ async function VerifyPayment({ orderId }: { orderId: string }) {
   // 1. Check local database first
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, payment_status, total_amount, payment_reference")
+    .select("id, payment_status, total_amount, payment_reference, payment_method")
     .eq("payment_reference", orderId)
     .single();
 
@@ -36,17 +36,22 @@ async function VerifyPayment({ orderId }: { orderId: string }) {
     );
   }
 
-  // 2. If already paid in DB, show success
+  // 2. If it's a COD order, show success immediately
+  if (order.payment_method === "cod") {
+    return <SuccessDisplay order={order} isCod={true} />;
+  }
+
+  // 3. If already paid in DB, show success
   if (order.payment_status === "paid") {
     return <SuccessDisplay order={order} />;
   }
 
-  // 3. If not paid, verify with PayHere Retrieval API
+  // 4. If not paid, verify with PayHere Retrieval API
   console.log(`🔍 Verifying payment ${orderId} via Retrieval API...`);
   const payHereOrder = await PayHereRetrievalService.getSuccessfulPayment(orderId);
 
   if (payHereOrder) {
-    // 4. Update database if verified via API (webhook might be slow)
+    // 5. Update database if verified via API (webhook might be slow)
     console.log(`✅ Payment ${orderId} verified via API. Updating DB...`);
     const { error: updateError } = await supabaseAdmin
       .from("orders")
@@ -85,15 +90,25 @@ async function VerifyPayment({ orderId }: { orderId: string }) {
   );
 }
 
-function SuccessDisplay({ order }: { order: any }) {
+function SuccessDisplay({ order, isCod }: { order: any, isCod?: boolean }) {
   return (
     <div className="text-center py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="relative inline-block mb-6">
         <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full scale-110"></div>
-        <CheckCircle2 className="w-20 h-20 text-green-500 relative z-10" />
+        {isCod ? (
+          <Truck className="w-20 h-20 text-primary relative z-10" />
+        ) : (
+          <CheckCircle2 className="w-20 h-20 text-green-500 relative z-10" />
+        )}
       </div>
-      <h2 className="text-3xl font-bold mb-2">Payment Successful!</h2>
-      <p className="text-muted-foreground mb-2">Your order has been confirmed and is being processed.</p>
+      <h2 className="text-3xl font-bold mb-2">
+        {isCod ? "Order Placed!" : "Payment Successful!"}
+      </h2>
+      <p className="text-muted-foreground mb-2">
+        {isCod 
+          ? "Your order has been placed. Please have the cash ready at delivery." 
+          : "Your payment has been verified and your order is being processed."}
+      </p>
       <p className="font-mono text-sm bg-muted inline-block px-3 py-1 rounded-full mb-8">
         Reference: {order.payment_reference}
       </p>

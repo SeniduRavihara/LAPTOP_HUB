@@ -1,5 +1,3 @@
-"use client"
-
 import { Overview } from "@/components/admin/overview"
 import { RecentSales } from "@/components/admin/recent-sales"
 import { Button } from "@/components/ui/button"
@@ -16,8 +14,15 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/components/ui/tabs"
+import { DashboardService } from "@/services/dashboard-service"
+import { createClient } from "@/lib/supabase/server"
 
-export default function DashboardPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const stats = await DashboardService.getOverviewStats(supabase)
+
   return (
     <div className="flex-1 space-y-4 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -61,16 +66,16 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="text-2xl font-bold">LKR {stats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  Lifetime revenue
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Subscriptions
+                  Active Auctions
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -88,15 +93,15 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+2350</div>
+                <div className="text-2xl font-bold">+{stats.activeAuctions}</div>
                 <p className="text-xs text-muted-foreground">
-                  +180.1% from last month
+                  Currently running
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -112,16 +117,16 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+12,234</div>
+                <div className="text-2xl font-bold">{stats.pendingOrders}</div>
                 <p className="text-xs text-muted-foreground">
-                  +19% from last month
+                  Requires fulfillment
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Active Now
+                  Total Users
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -137,9 +142,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">{stats.totalUsers}</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last hour
+                  Registered accounts
                 </p>
               </CardContent>
             </Card>
@@ -157,7 +162,7 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle>Recent Sales</CardTitle>
                 <CardDescription>
-                  You made 265 sales this month.
+                  Real-time sales feed
                 </CardDescription>
               </CardHeader>
               <CardContent>

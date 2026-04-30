@@ -105,6 +105,68 @@ export class AuctionService {
     }
 
     /**
+     * Create a new auction
+     */
+    static async createAuction(auction: any, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from("auctions")
+                .insert(auction)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuctionService.createAuction error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update an existing auction
+     */
+    static async updateAuction(id: string, updates: any, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from("auctions")
+                .update(updates)
+                .eq("id", id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuctionService.updateAuction error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Cancel an auction
+     */
+    static async cancelAuction(id: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from("auctions")
+                .update({ status: "cancelled" })
+                .eq("id", id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuctionService.cancelAuction error:', error);
+            throw error;
+        }
+    }
+
+    /**
      * End an auction (can be called by a trigger or job)
      */
     static async endAuction(id: string, supabaseOverride?: any) {

@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { AuctionService } from "@/services/auction-service";
 import { useAuth } from "@/context/AuthContext";
 
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+
+import { useCountdown } from "@/hooks/use-countdown";
+
 export default function AuctionDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -24,6 +29,9 @@ export default function AuctionDetailPage() {
   const [isWatching, setIsWatching] = useState(false);
   
   const supabase = createClient();
+  const timeLeft = useCountdown(auction?.end_time);
+
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAuction() {
@@ -32,12 +40,18 @@ export default function AuctionDetailPage() {
         const data: any = await AuctionService.getAuctionById(id, supabase);
         
         const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
-        setAuction({
+        const processedAuction = {
           ...data,
           currentBid: maxBid || data.starting_bid,
           totalBids: data.bids.length,
           specs: Object.entries(data.products.specs || {}).map(([label, value]) => ({ label, value: String(value) })),
-        });
+        };
+        setAuction(processedAuction);
+        
+        // Set initial active image
+        if (data.products.images?.length > 0) {
+          setActiveImage(data.products.images[0]);
+        }
       } catch (error) {
         console.error("Error fetching auction:", error);
         toast.error("Failed to load auction details");
@@ -60,14 +74,24 @@ export default function AuctionDetailPage() {
           filter: `auction_id=eq.${id}`
         },
         (payload: any) => {
+          const newBid = payload.new;
+          
           setAuction((prev: any) => {
             if (!prev) return prev;
-            const newBid = payload.new;
+            
+            // Check if current user is outbid
+            const userHasBid = prev.bids?.some((b: any) => b.bidder_id === user?.id);
+            if (userHasBid && newBid.bidder_id !== user?.id) {
+              toast.warning(`You've been outbid! Current bid is now LKR ${newBid.amount}`);
+            }
+
             return {
               ...prev,
               currentBid: Math.max(prev.currentBid, newBid.amount),
               totalBids: prev.totalBids + 1,
-              bids: [...(prev.bids || []), newBid]
+              bids: prev.bids?.some((b: any) => b.id === newBid.id) 
+                ? prev.bids 
+                : [...(prev.bids || []), newBid]
             };
           });
         }
@@ -77,7 +101,7 @@ export default function AuctionDetailPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleBid = async () => {
     if (!bidAmount) return;
@@ -94,7 +118,19 @@ export default function AuctionDetailPage() {
         return;
       }
 
-      await AuctionService.placeBid(id, user.id, amount, supabase);
+      const newBid = await AuctionService.placeBid(id, user.id, amount, supabase);
+      
+      // Update local state immediately
+      setAuction((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          currentBid: Math.max(prev.currentBid, newBid.amount),
+          totalBids: (prev.totalBids || 0) + 1,
+          bids: [newBid, ...(prev.bids || [])].sort((a, b) => b.amount - a.amount)
+        };
+      });
+
       toast.success("Bid placed successfully!");
       setBidAmount("");
     } catch (error: any) {
@@ -107,22 +143,32 @@ export default function AuctionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (!auction) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-muted-foreground">Auction not found</p>
-      </div>
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <p className="text-xl text-muted-foreground">Auction not found</p>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
@@ -146,19 +192,24 @@ export default function AuctionDetailPage() {
             <div className="bg-secondary border border-border rounded-lg overflow-hidden mb-4">
               <div className="relative w-full h-96">
                 <Image
-                  src={auction.products.images?.[0] || "/placeholder.svg"}
+                  src={activeImage || auction.products.images?.[0] || "/placeholder.svg"}
                   alt={auction.products.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 66vw"
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2 mb-8">
-              {(auction.products.images || []).map((image: string, idx: number) => (
+              {(auction.products.images || [])
+                .filter((img: string) => img && img.trim() !== "" && img !== "undefined")
+                .map((image: string, idx: number) => (
                 <div
                   key={idx}
-                  className="relative w-full h-20 rounded-lg overflow-hidden border border-border"
+                  onClick={() => setActiveImage(image)}
+                  className={`relative w-full h-20 rounded-lg overflow-hidden border cursor-pointer transition-all ${
+                    activeImage === image ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
+                  }`}
                 >
                   <Image
                     src={image || "/placeholder.svg"}
@@ -227,8 +278,12 @@ export default function AuctionDetailPage() {
                     Time Remaining
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-red-600">
-                  {new Date(auction.end_time).toLocaleTimeString()} {/* We can add a countdown hook later */}
+                <p className="text-3xl font-bold text-red-600 font-mono tracking-tight">
+                  {timeLeft.isExpired ? (
+                    "Auction Ended"
+                  ) : (
+                    `${timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}${timeLeft.hours.toString().padStart(2, "0")}h : ${timeLeft.minutes.toString().padStart(2, "0")}m : ${timeLeft.seconds.toString().padStart(2, "0")}s`
+                  )}
                 </p>
               </div>
 
@@ -238,7 +293,7 @@ export default function AuctionDetailPage() {
                   Current Bid
                 </p>
                 <p className="text-4xl font-bold text-primary mb-2">
-                  ${auction.currentBid}
+                  LKR {auction.currentBid.toLocaleString()}
                 </p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -255,19 +310,22 @@ export default function AuctionDetailPage() {
               {/* Bid Input */}
               <div className="mb-6">
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Your Bid (minimum ${auction.currentBid + 100} {/* Using 100 as default increment */}
+                  Your Bid (minimum LKR {(auction.currentBid + 1000).toLocaleString()} {/* Using 1000 as default increment */}
                   )
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder={`$${
-                      auction.currentBid + 100
-                    }`}
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    className="flex-1"
-                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                      LKR
+                    </span>
+                    <Input
+                      type="number"
+                      placeholder={(auction.currentBid + 1000).toString()}
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      className="pl-12"
+                    />
+                  </div>
                   <Button
                     onClick={handleBid}
                     disabled={isBidding}
@@ -277,7 +335,7 @@ export default function AuctionDetailPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Minimum increment: $100
+                  Minimum increment: LKR 1,000
                 </p>
               </div>
 
@@ -333,7 +391,9 @@ export default function AuctionDetailPage() {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

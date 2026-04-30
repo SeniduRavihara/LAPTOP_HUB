@@ -8,13 +8,34 @@ import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/user-nav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Search, ShoppingCart } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export function Navbar() {
+import { Suspense } from "react";
+
+function NavbarContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleSearch = (e: React.FormEvent | React.MouseEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set("query", searchQuery.trim());
+    router.push(`/products?${params.toString()}`);
+  };
+
+  // Sync search input with URL
+  useEffect(() => {
+    const query = searchParams?.get("query");
+    if (query) setSearchQuery(query);
+  }, [searchParams]);
 
   // Hide navbar elements on auth pages
   const isAuthPage = pathname === "/login" || pathname === "/signup";
@@ -35,32 +56,23 @@ export function Navbar() {
 
           {/* Search Bar - Hidden on auth pages */}
           {!isAuthPage && (
-            <div className="flex-1 max-w-md mx-4 hidden md:flex">
+            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4 hidden md:flex">
               <div className="relative w-full">
                 <Input
                   type="text"
-                  placeholder="Search laptops, accessories..."
+                  placeholder="Search laptops, brands, or specs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary"
+                  className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary focus:bg-background transition-all"
                 />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+                <button 
+                  type="submit"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Search className="w-5 h-5" />
                 </button>
               </div>
-            </div>
+            </form>
           )}
 
           {/* Right Actions - Simplified on auth pages */}
@@ -77,20 +89,8 @@ export function Navbar() {
                   href="/cart"
                   className="relative text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-accent text-accent-foreground text-xs font-bold rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6" />
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
                     {cartCount}
                   </span>
                 </Link>
@@ -103,11 +103,11 @@ export function Navbar() {
               !isAuthPage && (
                 <>
                   <Link href="/login">
-                    <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9">
+                    <Button variant="ghost" className="hidden sm:inline-flex rounded-lg h-9">
                       Sign In
                     </Button>
                   </Link>
-                  <Button className="hidden sm:inline-flex bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg h-9">
+                  <Button className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 shadow-sm">
                     Sell Now
                   </Button>
                 </>
@@ -119,14 +119,45 @@ export function Navbar() {
         {/* Mobile Search - Hidden on auth pages */}
         {!isAuthPage && (
           <div className="md:hidden pb-4">
-            <Input
-              type="text"
-              placeholder="Search..."
-              className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary text-sm"
-            />
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary text-sm"
+              />
+              <button 
+                type="submit"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         )}
       </div>
     </nav>
+  );
+}
+
+export function Navbar() {
+  return (
+    <Suspense fallback={
+      <nav className="bg-background border-b border-border sticky top-0 z-50 h-16 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary/20 rounded-lg animate-pulse" />
+            <div className="w-24 h-6 bg-secondary rounded animate-pulse" />
+          </div>
+          <div className="flex gap-4">
+            <div className="w-8 h-8 bg-secondary rounded-full animate-pulse" />
+            <div className="w-8 h-8 bg-secondary rounded-full animate-pulse" />
+          </div>
+        </div>
+      </nav>
+    }>
+      <NavbarContent />
+    </Suspense>
   );
 }

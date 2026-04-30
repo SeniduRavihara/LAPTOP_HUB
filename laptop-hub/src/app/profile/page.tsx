@@ -10,6 +10,8 @@ import { redirect } from "next/navigation"
 import { AuthService } from "@/services/auth-service"
 import { ProfileService } from "@/services/profile-service"
 
+import { MyBids } from "@/components/profile/my-bids"
+
 export default async function ProfilePage() {
   const supabase = await createClient()
   const user: any = await AuthService.getUser(supabase)
@@ -39,6 +41,7 @@ export default async function ProfilePage() {
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="addresses">Addresses</TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="bids">My Bids</TabsTrigger>
               </TabsList>
               
               <TabsContent value="profile" className="space-y-6">
@@ -59,6 +62,10 @@ export default async function ProfilePage() {
               
               <TabsContent value="orders">
                 <OrderHistory />
+              </TabsContent>
+
+              <TabsContent value="bids">
+                <MyBids />
               </TabsContent>
             </Tabs>
           </div>

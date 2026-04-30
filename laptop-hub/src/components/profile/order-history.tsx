@@ -31,7 +31,8 @@ export async function OrderHistory() {
               <TableHead>Order ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Payment Method</TableHead>
               <TableHead>Total Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -50,12 +51,17 @@ export async function OrderHistory() {
                     {order.payment_status}
                   </Badge>
                 </TableCell>
-                <TableCell>${order.total_amount}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={order.payment_method === 'cod' ? 'border-orange-500 text-orange-600 bg-orange-500/10' : 'border-blue-500 text-blue-600 bg-blue-500/10'}>
+                    {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-semibold">LKR {Number(order.total_amount).toLocaleString()}</TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
+                <TableCell colSpan={6} className="text-center h-24">
                   No orders found.
                 </TableCell>
               </TableRow>

@@ -96,15 +96,29 @@ export function ProductFilters() {
   }
 
   const handleApply = () => {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams(searchParams.toString())
+    
+    // Set or delete brand params
     if (selectedBrands.length > 0) params.set('brands', selectedBrands.join(','))
+    else params.delete('brands')
+    
+    // Set or delete processor params
     if (selectedProcessors.length > 0) params.set('processors', selectedProcessors.join(','))
+    else params.delete('processors')
+    
+    // Set or delete ram params
     if (selectedRams.length > 0) params.set('rams', selectedRams.join(','))
+    else params.delete('rams')
+    
+    // Set or delete price params
     if (minPrice) params.set('minPrice', minPrice)
+    else params.delete('minPrice')
+    
     if (maxPrice) params.set('maxPrice', maxPrice)
+    else params.delete('maxPrice')
 
     const queryString = params.toString()
-    const url = queryString ? `/?${queryString}#products` : '/#products'
+    const url = queryString ? `/products?${queryString}` : '/products'
     router.push(url, { scroll: false })
     router.refresh()
   }
@@ -115,7 +129,12 @@ export function ProductFilters() {
     setSelectedRams([])
     setMinPrice('')
     setMaxPrice('')
-    router.push(`/#products`, { scroll: false })
+    
+    // Preserve only the query if it exists
+    const query = searchParams.get('query')
+    const url = query ? `/products?query=${query}` : '/products'
+    
+    router.push(url, { scroll: false })
     router.refresh()
   }
 

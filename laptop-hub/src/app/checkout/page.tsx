@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Plus, CheckCircle2 } from "lucide-react";
+import { MapPin, Plus, CheckCircle2, CreditCard, Truck } from "lucide-react";
 import { Address, AddressService } from "@/services/address-service";
 
 export default function CheckoutPage() {
@@ -32,6 +32,7 @@ export default function CheckoutPage() {
     postalCode: "",
   });
 
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const [isProcessing, setIsProcessing] = useState(false);
   const [payHereParams, setPayHereParams] = useState<any>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -116,7 +117,6 @@ export default function CheckoutPage() {
         customer_name: formData.fullName,
         customer_email: formData.email,
         total_amount: total,
-        status: "pending",
         shipping_address: {
           address: formData.address,
           city: formData.city,
@@ -125,17 +125,20 @@ export default function CheckoutPage() {
         contact_phone: formData.phone,
       };
 
-      const { initializePayHerePayment } = await import("@/app/actions/payhere");
-      const result = await initializePayHerePayment(orderData, cartItems);
+      const { createOrderAction } = await import("@/app/actions/order");
+      const result = await createOrderAction(orderData, cartItems, paymentMethod);
 
-      if (result.success && result.params) {
-        setPayHereParams(result);
-        // sessionStorage.setItem("shipping_info", JSON.stringify(formData)); // Not needed anymore as we redirect
+      if (result.success) {
+        if (result.paymentMethod === 'cod') {
+          router.push(result.redirectUrl as string);
+        } else if (result.params) {
+          setPayHereParams(result);
+        }
       } else {
-        throw new Error(result.error || "Failed to initialize payment.");
+        throw new Error(result.error || "Failed to create order.");
       }
     } catch (error: any) {
-      console.error("Payment initialization failed:", error);
+      console.error("Checkout failed:", error);
       alert(error.message || "Something went wrong. Please try again.");
       setIsProcessing(false);
     }
@@ -336,6 +339,56 @@ export default function CheckoutPage() {
                     </div>
                   </form>
                 )}
+
+                {/* Payment Method Selection */}
+                <div className="mt-12">
+                  <h2 className="text-xl font-bold text-foreground mb-6">Payment Method</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                      onClick={() => setPaymentMethod('online')}
+                      className={`relative p-6 border rounded-xl cursor-pointer transition-all hover:border-primary/50 flex flex-col gap-3 ${
+                        paymentMethod === 'online'
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-card hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-primary" />
+                        </div>
+                        {paymentMethod === 'online' && (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-foreground">Online Payment</h3>
+                        <p className="text-xs text-muted-foreground mt-1">Pay securely via PayHere (Card, Koko, etc.)</p>
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => setPaymentMethod('cod')}
+                      className={`relative p-6 border rounded-xl cursor-pointer transition-all hover:border-primary/50 flex flex-col gap-3 ${
+                        paymentMethod === 'cod'
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-card hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                          <Truck className="w-5 h-5 text-orange-600" />
+                        </div>
+                        {paymentMethod === 'cod' && (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-foreground">Cash on Delivery</h3>
+                        <p className="text-xs text-muted-foreground mt-1">Pay with cash when your laptop is delivered</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

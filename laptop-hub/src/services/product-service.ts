@@ -41,11 +41,25 @@ export class ProductService {
     }
 
     /**
-     * Advanced search with filters
+     * Advanced search with filters and Full-Text Search
      */
     static async searchProducts(filters: any, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
+            // If a search query is provided, use the RPC function for hybrid search
+            if (filters?.query) {
+                const { data, error } = await supabase.rpc('search_products', {
+                    search_query: filters.query,
+                    filter_brands: (filters.brands && filters.brands.length > 0) ? filters.brands : null,
+                    min_price: filters.minPrice ? parseInt(filters.minPrice) : null,
+                    max_price: filters.maxPrice ? parseInt(filters.maxPrice) : null
+                });
+
+                if (error) throw error;
+                return data;
+            }
+
+            // Fallback to standard filtering if no search query
             let query = supabase
                 .from('products')
                 .select('*, auctions(status, starting_bid, end_time, bids(amount))')
@@ -176,6 +190,33 @@ export class ProductService {
             return true;
         } catch (error) {
             console.error('ProductService.deleteProduct error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Upload an image to Supabase Storage
+     */
+    static async uploadImage(file: File, userId: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (error) {
+            console.error('ProductService.uploadImage error:', error);
             throw error;
         }
     }
