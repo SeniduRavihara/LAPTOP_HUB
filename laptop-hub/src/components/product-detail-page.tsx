@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProductDetailPageProps {
   product: any;
@@ -12,6 +13,70 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const { user } = useAuth();
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+
+  useEffect(() => {
+    if (!product?.id) {
+      setIsLoadingReviews(false);
+      return;
+    }
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`/api/reviews/${product.id}`);
+        const data = await res.json();
+        if (data.reviews) {
+          setReviews(data.reviews);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+    fetchReviews();
+  }, [product?.id]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return alert("You must be logged in to leave a review.");
+    if (!comment.trim()) return alert("Please enter a comment.");
+    
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: product.id,
+          rating,
+          comment,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.review) {
+        // Attach local user name for immediate UI feedback
+        const newReview = data.review;
+        const reviewerName = user?.user_metadata?.name || user?.email?.split('@')[0] || "You";
+        
+        setReviews([{ ...newReview, user_name: reviewerName }, ...reviews]);
+        setComment("");
+        setRating(5);
+      } else {
+        alert(data.error || "Failed to submit review");
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alert("An error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!product) return null;
 
@@ -252,38 +317,89 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             <h2 className="text-2xl font-bold text-foreground mb-6">
               Customer Reviews
             </h2>
-            <div className="space-y-6">
-              {[...Array(3)].map((_, idx) => (
-                <div
-                  key={idx}
-                  className="pb-6 border-b border-border last:border-0"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-foreground">John Doe</p>
-                      <div className="flex gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className="w-4 h-4 text-yellow-400"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      2 days ago
-                    </span>
+
+            {/* Review Form */}
+            {user ? (
+              <form onSubmit={handleSubmitReview} className="mb-8 p-4 bg-secondary/30 rounded-lg border border-border">
+                <h3 className="font-semibold mb-3">Write a Review</h3>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`p-1 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'} transition-colors`}
+                      >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Excellent laptop! Very fast, sleek design, and great battery
-                    life. Highly recommend for professionals.
-                  </p>
                 </div>
-              ))}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Comment</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full p-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                    rows={3}
+                    placeholder="What did you like or dislike?"
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </form>
+            ) : (
+              <div className="mb-8 p-4 bg-secondary/30 rounded-lg border border-border flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">Log in to leave a review.</p>
+                <Button variant="outline" asChild>
+                  <a href="/login">Log In</a>
+                </Button>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {isLoadingReviews ? (
+                <p className="text-sm text-muted-foreground">Loading reviews...</p>
+              ) : reviews.length > 0 ? (
+                reviews.map((review: any) => (
+                  <div
+                    key={review.id}
+                    className="pb-6 border-b border-border last:border-0"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="font-semibold text-foreground">{review.user_name || "Verified Buyer"}</p>
+                        <div className="flex gap-1 mt-1">
+                          {[...Array(5)].map((_, i) => (
+                            <svg
+                              key={i}
+                              className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {review.comment}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+              )}
             </div>
           </div>
         </div>

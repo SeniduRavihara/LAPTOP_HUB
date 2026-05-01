@@ -41,7 +41,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/signup') ||
     request.nextUrl.pathname.startsWith('/auth') ||
     request.nextUrl.pathname.startsWith('/products') ||
-    request.nextUrl.pathname.startsWith('/auctions');
+    request.nextUrl.pathname.startsWith('/auctions') ||
+    request.nextUrl.pathname.startsWith('/api/reviews');
 
   if (!user && !isPublicRoute) {
     // no user, potentially respond by redirecting the user to the login page
