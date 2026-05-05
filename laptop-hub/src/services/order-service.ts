@@ -28,14 +28,29 @@ export class OrderService {
     /**
      * Fetches order items for a specific seller
      */
-    static async getSellerOrderItems(sellerId: string, supabaseOverride?: any) {
+    static async getSellerOrderItems(
+        sellerId: string, 
+        supabaseOverride?: any,
+        filters?: { search?: string, status?: string }
+    ) {
         const supabase = this.getClient(supabaseOverride);
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from("order_items")
                 .select("*, products!inner(*), orders!inner(*)")
                 .eq("products.seller_id", sellerId)
                 .order("created_at", { ascending: false });
+
+            if (filters?.search) {
+                // Search in product name or order ID
+                query = query.or(`products.name.ilike.%${filters.search}%,orders.payment_reference.ilike.%${filters.search}%`);
+            }
+
+            if (filters?.status && filters.status !== 'all') {
+                query = query.eq('orders.status', filters.status);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             return data;

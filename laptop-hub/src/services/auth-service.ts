@@ -140,4 +140,34 @@ export class AuthService {
             return null;
         }
     }
+
+    /**
+     * Sends a password reset email to the given address
+     */
+    static async resetPasswordForEmail(email: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${getURL()}/reset-password`,
+            });
+            if (error) throw error;
+        } catch (error) {
+            console.error('AuthService.resetPasswordForEmail error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Updates the authenticated user's password (called after reset link click)
+     */
+    static async updatePassword(newPassword: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) throw error;
+        } catch (error) {
+            console.error('AuthService.updatePassword error:', error);
+            throw error;
+        }
+    }
 }

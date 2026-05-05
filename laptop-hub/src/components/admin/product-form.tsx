@@ -28,6 +28,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { toast } from "sonner"
+import { adminCreateProduct, adminUpdateProduct } from "@/app/actions/product"
+import { adminCreateAuction, adminUpdateAuction, adminCancelAuction } from "@/app/actions/auction"
 import { ProductService } from "@/services/product-service"
 import { AuctionService } from "@/services/auction-service"
 
@@ -62,6 +64,47 @@ const productSchema = z.object({
   reserve_price: numericOptional,
   start_time: z.date().optional().nullable(),
   end_time: z.date().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (!data.isAuction) return; // only validate auction fields when auction is enabled
+
+  // Helper to check if date is valid
+  const isValidDate = (d: any) => d instanceof Date && !isNaN(d.getTime());
+
+  // starting_bid is required and must be > 0
+  if (data.starting_bid === undefined || data.starting_bid === null || data.starting_bid <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Starting bid is required and must be greater than 0",
+      path: ["starting_bid"],
+    });
+  }
+
+  // start_time is required and must be a valid date
+  if (!data.start_time || !isValidDate(data.start_time)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Start time is required for auction listings",
+      path: ["start_time"],
+    });
+  }
+
+  // end_time is required and must be a valid date
+  if (!data.end_time || !isValidDate(data.end_time)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time is required for auction listings",
+      path: ["end_time"],
+    });
+  }
+
+  // end_time must be after start_time
+  if (isValidDate(data.start_time) && isValidDate(data.end_time) && data.end_time! <= data.start_time!) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time must be after start time",
+      path: ["end_time"],
+    });
+  }
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
@@ -107,7 +150,7 @@ export function ProductForm({ initialData }: Props) {
         key,
         value: String(value)
       })) : [],
-      isAuction: !!initialData.auction && (Array.isArray(initialData.auction) ? initialData.auction.length > 0 : true),
+      isAuction: !!(Array.isArray(initialData.auction) ? initialData.auction[0] : initialData.auction),
       starting_bid: (Array.isArray(initialData.auction) ? initialData.auction[0]?.starting_bid : initialData.auction?.starting_bid) ?? 0,
       reserve_price: (Array.isArray(initialData.auction) ? initialData.auction[0]?.reserve_price : initialData.auction?.reserve_price) ?? "",
       start_time: (Array.isArray(initialData.auction) ? (initialData.auction[0]?.start_time ? new Date(initialData.auction[0].start_time) : null) : (initialData.auction?.start_time ? new Date(initialData.auction.start_time) : null)),
@@ -215,41 +258,64 @@ export function ProductForm({ initialData }: Props) {
         badge: data.badge || null,
         images: data.images,
         specs: specsObject,
-        seller_id: user.id,
+        seller_id: initialData?.seller_id || user.id, // Preserve original seller if editing
       }
+
+      console.log("Submitting product data:", productData)
 
       let productId = initialData?.id
+      let result
 
       if (initialData?.id) {
-        await ProductService.updateProduct(initialData.id, productData as any)
+        result = await adminUpdateProduct(initialData.id, productData)
       } else {
-        const newProduct: any = await ProductService.createProduct(productData as any)
-        productId = newProduct.id
+        result = await adminCreateProduct(productData)
+        if (result.success) {
+          productId = result.data.id
+        }
       }
 
-      // Handle Auction creation/update via AuctionService
+      if (!result.success) {
+        throw new Error(result.error || "Failed to save product")
+      }
+
+      // Handle Auction creation/update via Server Actions
       if (data.isAuction) {
+        if (!data.start_time || !data.end_time) {
+          throw new Error("Start time and end time are required for auctions")
+        }
+
         const auctionData = {
           product_id: productId!,
-          seller_id: user.id,
+          seller_id: initialData?.seller_id || user.id,
           starting_bid: data.starting_bid || 0,
           reserve_price: data.reserve_price ?? null,
-          start_time: data.start_time?.toISOString() || null,
-          end_time: data.end_time?.toISOString() || null,
+          start_time: data.start_time.toISOString(),
+          end_time: data.end_time.toISOString(),
           status: 'active' as const
         }
 
+        console.log("Submitting auction data:", auctionData)
+
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
+        let auctionResult
 
         if (existingAuction) {
-          await AuctionService.updateAuction(existingAuction.id, auctionData)
+          auctionResult = await adminUpdateAuction(existingAuction.id, auctionData)
         } else {
-          await AuctionService.createAuction(auctionData)
+          auctionResult = await adminCreateAuction(auctionData)
+        }
+
+        if (!auctionResult.success) {
+          throw new Error(auctionResult.error || "Failed to save auction details")
         }
       } else {
         const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
         if (existingAuction) {
-          await AuctionService.cancelAuction(existingAuction.id)
+          const cancelResult = await adminCancelAuction(existingAuction.id)
+          if (!cancelResult.success) {
+            throw new Error(cancelResult.error || "Failed to cancel auction")
+          }
         }
       }
 
@@ -257,7 +323,7 @@ export function ProductForm({ initialData }: Props) {
       router.push("/admin/products")
       router.refresh()
     } catch (error: any) {
-      console.error("Submission error:", error)
+      console.error("Submission error details:", error)
       toast.error(error.message || "Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)

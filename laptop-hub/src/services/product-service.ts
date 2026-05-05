@@ -91,19 +91,33 @@ export class ProductService {
     }
 
     /**
-     * Get all products for a specific seller
+     * Get all products for a specific seller with optional filters
      */
-    static async getSellerProducts(sellerId: string, supabaseOverride?: any) {
+    static async getSellerProducts(sellerId: string, filters?: { search?: string; type?: string }, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('products')
                 .select('*, auctions(status)')
                 .eq('seller_id', sellerId)
                 .order('created_at', { ascending: false });
+
+            if (filters?.search) {
+                query = query.or(`name.ilike.%${filters.search}%,brand.ilike.%${filters.search}%`);
+            }
             
+            const { data: allProducts, error } = await query;
             if (error) throw error;
-            return data;
+
+            // Filter by type (Auction/Standard)
+            if (filters?.type && filters.type !== "all") {
+                return allProducts?.filter((p: any) => {
+                    const isAuction = p.auctions && (Array.isArray(p.auctions) ? p.auctions.length > 0 : !!p.auctions);
+                    return filters.type === "auction" ? isAuction : !isAuction;
+                });
+            }
+
+            return allProducts;
         } catch (error) {
             console.error('ProductService.getSellerProducts error:', error);
             throw error;
@@ -169,8 +183,8 @@ export class ProductService {
             
             if (error) throw error;
             return data;
-        } catch (error) {
-            console.error('ProductService.updateProduct error:', error);
+        } catch (error: any) {
+            console.error('ProductService.updateProduct error:', JSON.stringify(error, null, 2) || error);
             throw error;
         }
     }
