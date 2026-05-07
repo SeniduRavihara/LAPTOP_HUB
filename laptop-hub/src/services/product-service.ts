@@ -28,14 +28,30 @@ export class ProductService {
         try {
             const { data, error } = await supabase
                 .from('products')
-                .select('*, auctions(status, starting_bid, end_time, bids(amount))')
+                .select(`
+                    *,
+                    auctions (
+                        status,
+                        starting_bid,
+                        end_time,
+                        bids (
+                            amount
+                        )
+                    )
+                `)
                 .order('created_at', { ascending: false })
                 .limit(limit);
             
             if (error) throw error;
             return data;
-        } catch (error) {
-            console.error('ProductService.getRecentProducts error:', error);
+        } catch (error: any) {
+            console.error('ProductService.getRecentProducts error details:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code,
+                error: error
+            });
             throw error;
         }
     }
@@ -62,7 +78,17 @@ export class ProductService {
             // Fallback to standard filtering if no search query
             let query = supabase
                 .from('products')
-                .select('*, auctions(status, starting_bid, end_time, bids(amount))')
+                .select(`
+                    *,
+                    auctions (
+                        status,
+                        starting_bid,
+                        end_time,
+                        bids (
+                            amount
+                        )
+                    )
+                `)
                 .order('created_at', { ascending: false });
 
             if (filters?.brands && filters.brands.length > 0) {

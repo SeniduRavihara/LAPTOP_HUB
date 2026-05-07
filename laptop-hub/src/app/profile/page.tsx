@@ -11,6 +11,7 @@ import { AuthService } from "@/services/auth-service"
 import { ProfileService } from "@/services/profile-service"
 
 import { MyBids } from "@/components/profile/my-bids"
+import { ChangePasswordForm } from "@/components/profile/change-password-form"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -53,6 +54,18 @@ export default async function ProfilePage() {
                       </p>
                     </div>
                     <ProfileForm user={user} userData={userData} />
+                 </div>
+
+                 <Separator />
+
+                 <div className="flex flex-col gap-6">
+                    <div>
+                      <h3 className="text-lg font-medium">Security</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Update your password to keep your account secure.
+                      </p>
+                    </div>
+                    <ChangePasswordForm />
                  </div>
               </TabsContent>
 

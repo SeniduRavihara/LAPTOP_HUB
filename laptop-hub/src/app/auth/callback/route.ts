@@ -5,13 +5,19 @@ import { AuthService } from '@/services/auth-service'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') || '/'
   const origin = requestUrl.origin
 
   if (code) {
     const supabase = await createClient()
     await AuthService.exchangeCodeForSession(code, supabase)
     
-    // Fetch profile to determine redirect
+    // If there is a next parameter (like /reset-password), prioritize it
+    if (next !== '/') {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+
+    // Fetch profile to determine redirect for standard sign-ins
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: profile } = await supabase
@@ -29,5 +35,5 @@ export async function GET(request: Request) {
   }
 
   // Fallback redirect
-  return NextResponse.redirect(`${origin}/`)
+  return NextResponse.redirect(`${origin}${next}`)
 }
