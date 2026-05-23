@@ -25,6 +25,19 @@ export default async function ProductDetail({
     redirect(`/auctions/${auction.id}`);
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+  let initialIsWishlisted = false;
+  if (user) {
+    const { data: wishlistData } = await supabase
+      .from('wishlists')
+      .select('id')
+      .match({ user_id: user.id, product_id: id })
+      .maybeSingle();
+    if (wishlistData) {
+      initialIsWishlisted = true;
+    }
+  }
+
   return (
     <>
       <Navbar />
@@ -47,7 +60,7 @@ export default async function ProductDetail({
           </nav>
         </div>
 
-        <ProductDetailPage product={product} />
+        <ProductDetailPage product={product} initialIsWishlisted={initialIsWishlisted} />
       </main>
       <Footer />
     </>

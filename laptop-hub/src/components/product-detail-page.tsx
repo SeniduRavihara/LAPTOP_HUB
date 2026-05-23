@@ -3,22 +3,31 @@
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { wishlistService } from "@/services/wishlist-service";
 
 import { ReviewSection } from "@/components/reviews/review-section";
 
 interface ProductDetailPageProps {
   product: any;
+  initialIsWishlisted?: boolean;
 }
 
-export function ProductDetailPage({ product }: ProductDetailPageProps) {
+export function ProductDetailPage({ product, initialIsWishlisted = false }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const { addToCart } = useCart();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsWishlisted(initialIsWishlisted);
+  }, [initialIsWishlisted]);
 
   if (!product) return null;
 
@@ -29,6 +38,31 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
         : Object.entries(product.specs).map(([key, value]) => ({ key, value })))
     : [];
   const originalPrice = product.original_price || product.price * 1.15;
+
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      setIsWishlistLoading(true);
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(product.id, user.id);
+        setIsWishlisted(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistService.addToWishlist(product.id, user.id);
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -222,12 +256,13 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               </Button>
 
               <Button
-                onClick={() => setIsWishlisted(!isWishlisted)}
+                onClick={handleWishlistToggle}
+                disabled={isWishlistLoading}
                 className={`w-full h-12 rounded-lg font-semibold text-lg transition-colors ${
                   isWishlisted
                     ? "bg-red-500/10 text-red-600 border border-red-500"
                     : "bg-secondary hover:bg-secondary/80 border border-border text-foreground"
-                }`}
+                } ${isWishlistLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isWishlisted ? "♥ Added to Wishlist" : "☆ Add to Wishlist"}
               </Button>

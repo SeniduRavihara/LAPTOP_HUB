@@ -8,6 +8,7 @@ import { ChangePasswordForm } from "@/components/profile/change-password-form"
 import { AddressList } from "@/components/profile/address-list"
 import { OrderHistory } from "@/components/profile/order-history"
 import { MyBids } from "@/components/profile/my-bids"
+import { Wishlist } from "@/components/profile/wishlist"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -90,6 +91,7 @@ export function ProfileClient({ user, userData, stats }: ProfileClientProps) {
           </div>
         )
       case "wishlist":
+        return <Wishlist userId={user.id} />
       case "bids":
         return <MyBids userId={user.id} />
       default:

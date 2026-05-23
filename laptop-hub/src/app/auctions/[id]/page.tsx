@@ -18,6 +18,8 @@ import { Footer } from "@/components/footer";
 
 import { useCountdown } from "@/hooks/use-countdown";
 
+import { wishlistService } from "@/services/wishlist-service";
+
 export default function AuctionDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -27,6 +29,7 @@ export default function AuctionDetailPage() {
   const [isBidding, setIsBidding] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [isWatching, setIsWatching] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   
   const supabase = createClient();
   const timeLeft = useCountdown(auction?.end_time);
@@ -48,6 +51,11 @@ export default function AuctionDetailPage() {
         };
         setAuction(processedAuction);
         
+        if (user) {
+          const inWishlist = await wishlistService.isInWishlist(data.product_id, user.id);
+          setIsWatching(inWishlist);
+        }
+
         // Set initial active image
         if (data.products.images?.length > 0) {
           setActiveImage(data.products.images[0]);
@@ -341,9 +349,32 @@ export default function AuctionDetailPage() {
 
               {/* Watch Button */}
               <Button
-                onClick={() => setIsWatching(!isWatching)}
+                onClick={async () => {
+                  if (!user) {
+                    toast.error("Please login to watch this auction");
+                    return;
+                  }
+                  try {
+                    setIsWishlistLoading(true);
+                    if (isWatching) {
+                      await wishlistService.removeFromWishlist(auction.product_id, user.id);
+                      setIsWatching(false);
+                      toast.success("Removed from watch list");
+                    } else {
+                      await wishlistService.addToWishlist(auction.product_id, user.id);
+                      setIsWatching(true);
+                      toast.success("Added to watch list");
+                    }
+                  } catch (error) {
+                    console.error("Watch toggle error:", error);
+                    toast.error("Failed to update watch list");
+                  } finally {
+                    setIsWishlistLoading(false);
+                  }
+                }}
+                disabled={isWishlistLoading}
                 variant="outline"
-                className="w-full mb-6"
+                className={`w-full mb-6 ${isWatching ? "bg-accent text-accent-foreground border-accent" : ""}`}
               >
                 {isWatching ? "✓ Watching" : "+ Watch This Auction"}
               </Button>

@@ -3,7 +3,10 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { wishlistService } from "@/services/wishlist-service";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   id: string;
@@ -16,8 +19,10 @@ interface ProductCardProps {
   stock: number;
   badge?: string;
   isAuction?: boolean;
+  auctionId?: string | null;
   currentBid?: number | null;
   endTime?: string | null;
+  initialIsWishlisted?: boolean;
 }
 
 export function ProductCard({
@@ -31,14 +36,48 @@ export function ProductCard({
   stock,
   badge,
   isAuction,
+  auctionId,
   currentBid,
   endTime,
+  initialIsWishlisted = false,
 }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+  const [isLoading, setIsLoading] = useState(false);
   const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
 
+  useEffect(() => {
+    setIsWishlisted(initialIsWishlisted);
+  }, [initialIsWishlisted]);
+
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(id, user.id);
+        setIsWishlisted(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistService.addToWishlist(id, user.id);
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Link href={isAuction ? `/auctions/${id}` : `/products/${id}`}>
+    <Link href={isAuction && auctionId ? `/auctions/${auctionId}` : `/products/${id}`}>
       <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col">
         {/* Image Container */}
         <div className="relative w-full h-48 bg-secondary overflow-hidden">
@@ -63,17 +102,15 @@ export function ProductCard({
               {badge}
             </div>
           )}
-          {stock === 0 && (
+          {stock === 0 && !isAuction && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-white font-semibold">Out of Stock</span>
             </div>
           )}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsWishlisted(!isWishlisted);
-            }}
-            className="absolute top-3 left-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+            onClick={handleWishlistToggle}
+            disabled={isLoading}
+            className={`absolute top-3 left-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <svg
               className={`w-5 h-5 ${

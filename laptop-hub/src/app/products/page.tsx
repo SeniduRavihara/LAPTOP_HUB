@@ -50,6 +50,19 @@ export default async function ProductsPage(props: {
     });
   }
 
+  // Fetch wishlist
+  const { data: { user } } = await supabase.auth.getUser();
+  let wishlistedProductIds = new Set<string>();
+  if (user) {
+    const { data: wishlistData } = await supabase
+      .from('wishlists')
+      .select('product_id')
+      .eq('user_id', user.id);
+    if (wishlistData) {
+      wishlistedProductIds = new Set(wishlistData.map((w: any) => w.product_id));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F4F4] dark:bg-background">
       <Navbar />
@@ -120,8 +133,10 @@ export default async function ProductsPage(props: {
                       stock={product.stock}
                       badge={product.badge}
                       isAuction={isAuction}
+                      auctionId={isAuction ? auction.id : null}
                       currentBid={currentBid}
                       endTime={isAuction ? auction.end_time : null}
+                      initialIsWishlisted={wishlistedProductIds.has(product.id)}
                     />
                   );
                 })}

@@ -9,9 +9,10 @@ import { ProductFilters } from '@/components/product-filters'
 interface HomePageClientProps {
   products: any[];
   auctions: any[];
+  wishlistedProductIds?: string[];
 }
 
-export default function HomePageClient({ products = [], auctions = [] }: HomePageClientProps) {
+export default function HomePageClient({ products = [], auctions = [], wishlistedProductIds = [] }: HomePageClientProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [activeFilter, setActiveFilter] = useState<'all' | 'premium' | 'gaming'>('all')
   const totalSlides = 4
@@ -174,6 +175,7 @@ export default function HomePageClient({ products = [], auctions = [] }: HomePag
                 <AuctionCard 
                   key={auction.id}
                   id={auction.id}
+                  productId={product.id}
                   name={product.name || 'Unknown Laptop'}
                   brand={product.brand}
                   image={product.images?.[0]}
@@ -182,6 +184,7 @@ export default function HomePageClient({ products = [], auctions = [] }: HomePag
                   endTime={auction.end_time}
                   rating={4.8}
                   seller="Verified Seller"
+                  initialIsWatching={wishlistedProductIds.includes(product.id)}
                 />
               );
             })}
@@ -311,8 +314,10 @@ export default function HomePageClient({ products = [], auctions = [] }: HomePag
                     stock={product.stock}
                     badge={product.badge}
                     isAuction={isAuction}
+                    auctionId={isAuction ? auction.id : null}
                     currentBid={currentBid}
                     endTime={isAuction ? auction.end_time : null}
+                    initialIsWishlisted={wishlistedProductIds.includes(product.id)}
                   />
                 );
               })}
