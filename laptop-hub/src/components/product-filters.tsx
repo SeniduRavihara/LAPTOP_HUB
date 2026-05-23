@@ -9,11 +9,14 @@ export function ProductFilters() {
   const searchParams = useSearchParams()
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    type: true,
     brand: true,
     price: true,
     processor: true,
     ram: true,
   })
+
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
 
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedProcessors, setSelectedProcessors] = useState<string[]>([])
@@ -24,6 +27,7 @@ export function ProductFilters() {
   // Initialize filters from URL
   useEffect(() => {
     setSelectedBrands(searchParams.get('brands')?.split(',').filter(Boolean) || [])
+    setSelectedTypes(searchParams.get('types')?.split(',').filter(Boolean) || [])
     setSelectedProcessors(searchParams.get('processors')?.split(',').filter(Boolean) || [])
     setSelectedRams(searchParams.get('rams')?.split(',').filter(Boolean) || [])
     setMinPrice(searchParams.get('minPrice') || '')
@@ -43,6 +47,7 @@ export function ProductFilters() {
     let selected: string[]
 
     if (key === 'brand') { setSelected = setSelectedBrands; selected = selectedBrands; }
+    else if (key === 'type') { setSelected = setSelectedTypes; selected = selectedTypes; }
     else if (key === 'processor') { setSelected = setSelectedProcessors; selected = selectedProcessors; }
     else if (key === 'ram') { setSelected = setSelectedRams; selected = selectedRams; }
     else return;
@@ -56,7 +61,9 @@ export function ProductFilters() {
 
   const filterSection = (title: string, items: string[]) => {
     const key = title.toLowerCase();
-    const selected = key === 'brand' ? selectedBrands : key === 'processor' ? selectedProcessors : selectedRams;
+    const selected = key === 'brand' ? selectedBrands : 
+                     key === 'type' ? selectedTypes : 
+                     key === 'processor' ? selectedProcessors : selectedRams;
 
     return (
       <div key={title} className="border-b border-border py-4">
@@ -102,6 +109,10 @@ export function ProductFilters() {
     if (selectedBrands.length > 0) params.set('brands', selectedBrands.join(','))
     else params.delete('brands')
     
+    // Set or delete type params
+    if (selectedTypes.length > 0) params.set('types', selectedTypes.join(','))
+    else params.delete('types')
+    
     // Set or delete processor params
     if (selectedProcessors.length > 0) params.set('processors', selectedProcessors.join(','))
     else params.delete('processors')
@@ -125,6 +136,7 @@ export function ProductFilters() {
 
   const handleReset = () => {
     setSelectedBrands([])
+    setSelectedTypes([])
     setSelectedProcessors([])
     setSelectedRams([])
     setMinPrice('')
@@ -139,54 +151,61 @@ export function ProductFilters() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 h-fit">
-      <h3 className="font-semibold text-foreground mb-4">Filters</h3>
+    <div className="bg-card border border-border rounded-lg flex flex-col max-h-[calc(100vh-8rem)]">
+      <div className="p-4 pb-2">
+        <h3 className="font-semibold text-foreground">Filters</h3>
+      </div>
 
-      {filterSection('Brand', ['Dell', 'HP', 'Lenovo', 'Apple', 'ASUS', 'MSI'])}
-      {filterSection('Processor', ['Intel Core i5', 'Intel Core i7', 'AMD Ryzen 5', 'AMD Ryzen 7', 'Apple M1'])}
-      {filterSection('RAM', ['8GB', '16GB', '32GB', '64GB+'])}
+      <div className="flex-1 overflow-y-auto p-4 pt-0">
+        {filterSection('Type', ['Standard', 'Auction'])}
+        {filterSection('Brand', ['Dell', 'HP', 'Lenovo', 'Apple', 'ASUS', 'MSI'])}
+        {filterSection('Processor', ['Intel Core i5', 'Intel Core i7', 'AMD Ryzen 5', 'AMD Ryzen 7', 'Apple M1'])}
+        {filterSection('RAM', ['8GB', '16GB', '32GB', '64GB+'])}
 
-      <div className="border-b border-border py-4">
-        <label className="block text-sm font-semibold text-foreground mb-3">Price Range</label>
-        <div className="space-y-3">
-          <input 
-            type="range" 
-            min="0" 
-            max="5000" 
-            value={maxPrice || '5000'}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-full accent-primary" 
-          />
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input 
-                type="number" 
-                placeholder="Min" 
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
-              />
-            </div>
-            <span className="text-muted-foreground flex-shrink-0">-</span>
-            <div className="relative flex-1">
-              <input 
-                type="number" 
-                placeholder="Max" 
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
-              />
+        <div className="border-b border-border py-4">
+          <label className="block text-sm font-semibold text-foreground mb-3">Price Range</label>
+          <div className="space-y-3">
+            <input 
+              type="range" 
+              min="0" 
+              max="5000" 
+              value={maxPrice || '5000'}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-full accent-primary" 
+            />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input 
+                  type="number" 
+                  placeholder="Min" 
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
+                />
+              </div>
+              <span className="text-muted-foreground flex-shrink-0">-</span>
+              <div className="relative flex-1">
+                <input 
+                  type="number" 
+                  placeholder="Max" 
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="w-full min-w-0 px-2 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary transition-all" 
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <Button onClick={handleApply} className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium">
-        Apply Filters
-      </Button>
-      <Button onClick={handleReset} variant="outline" className="w-full mt-2 border border-border bg-background text-foreground hover:bg-secondary rounded-lg h-9">
-        Reset
-      </Button>
+      <div className="p-4 border-t border-border mt-auto">
+        <Button onClick={handleApply} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium">
+          Apply Filters
+        </Button>
+        <Button onClick={handleReset} variant="outline" className="w-full mt-2 border border-border bg-background text-foreground hover:bg-secondary rounded-lg h-9">
+          Reset
+        </Button>
+      </div>
     </div>
   )
 }

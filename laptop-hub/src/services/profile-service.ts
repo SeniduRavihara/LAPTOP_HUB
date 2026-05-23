@@ -46,6 +46,31 @@ export class ProfileService {
     }
 
     /**
+     * Get user statistics for the profile dashboard
+     */
+    static async getUserStats(userId: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const [orders, activeOrders, wishlist, addresses] = await Promise.all([
+                supabase.from('orders').select('id', { count: 'exact' }).eq('customer_id', userId),
+                supabase.from('orders').select('id', { count: 'exact' }).eq('customer_id', userId).not('status', 'in', '("delivered","cancelled","refunded")'),
+                supabase.from('wishlists').select('id', { count: 'exact' }).eq('user_id', userId),
+                supabase.from('addresses').select('id', { count: 'exact' }).eq('user_id', userId)
+            ]);
+            
+            return {
+                totalOrders: orders.count || 0,
+                activeOrders: activeOrders.count || 0,
+                wishlistCount: wishlist.count || 0,
+                addressCount: addresses.count || 0
+            };
+        } catch (error) {
+            console.error('ProfileService.getUserStats error:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get seller specific statistics for the dashboard
      */
     static async getSellerStats(sellerId: string, supabaseOverride?: any) {

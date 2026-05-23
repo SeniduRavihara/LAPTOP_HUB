@@ -19,6 +19,7 @@ export default async function ProductsPage(props: {
   const brands = searchParams.brands ? (searchParams.brands as string).split(',') : undefined;
   const processors = searchParams.processors ? (searchParams.processors as string).split(',') : undefined;
   const rams = searchParams.rams ? (searchParams.rams as string).split(',') : undefined;
+  const types = searchParams.types ? (searchParams.types as string).split(',') : undefined;
   const minPrice = searchParams.minPrice as string | undefined;
   const maxPrice = searchParams.maxPrice as string | undefined;
   const sort = searchParams.sort as string | undefined;
@@ -37,6 +38,16 @@ export default async function ProductsPage(props: {
     sortedProducts.sort((a, b) => b.price - a.price);
   } else if (sort === "newest") {
     sortedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  // Filter by type (in-memory)
+  if (types && types.length > 0 && types.length < 2) {
+    const isLookingForAuction = types.includes('Auction');
+    sortedProducts = sortedProducts.filter(p => {
+      const auction = Array.isArray(p.auctions) ? p.auctions[0] : p.auctions;
+      const isAuction = auction && auction.status === 'active';
+      return isLookingForAuction ? isAuction : !isAuction;
+    });
   }
 
   return (

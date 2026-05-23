@@ -35,7 +35,7 @@ import { AuctionService } from "@/services/auction-service"
 
 const numericOptional = z.preprocess(
   (val) => (val === "" || val === null || val === undefined ? null : val),
-  z.coerce.number().nullable().optional()
+  z.coerce.number().min(0, { message: "Must be 0 or greater" }).nullable().optional()
 );
 
 const productSchema = z.object({
@@ -77,6 +77,17 @@ const productSchema = z.object({
       message: "Starting bid is required and must be greater than 0",
       path: ["starting_bid"],
     });
+  }
+
+  // reserve_price cannot be less than starting_bid
+  if (data.reserve_price !== null && data.reserve_price !== undefined && data.starting_bid !== undefined && data.starting_bid !== null) {
+    if (data.reserve_price < data.starting_bid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Reserve price must be greater than or equal to starting bid",
+        path: ["reserve_price"],
+      });
+    }
   }
 
   // start_time is required and must be a valid date

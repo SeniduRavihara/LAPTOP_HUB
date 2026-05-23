@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -7,40 +10,61 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createClient } from "@/lib/supabase/server";
-import { AuthService } from "@/services/auth-service";
+import { supabase } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 
-export async function MyBids() {
-  const supabase = await createClient();
-  const user = (await AuthService.getUser(supabase)) as any;
+interface MyBidsProps {
+  userId: string
+}
 
-  if (!user || !user.id) return null;
+export function MyBids({ userId }: MyBidsProps) {
+  const [bids, setBids] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Fetch bids for this user
-  const { data: bids, error } = await supabase
-    .from("bids")
-    .select(`
-      id,
-      amount,
-      created_at,
-      auction_id,
-      auctions:auction_id (
-        id,
-        status,
-        end_time,
-        products:product_id (
-          name
-        )
-      )
-    `)
-    .eq("bidder_id", user.id)
-    .order("created_at", { ascending: false });
+  useEffect(() => {
+    async function fetchBids() {
+      try {
+        const { data, error } = await supabase
+          .from("bids")
+          .select(`
+            id,
+            amount,
+            created_at,
+            auction_id,
+            auctions:auction_id (
+              id,
+              status,
+              end_time,
+              products:product_id (
+                name
+              )
+            )
+          `)
+          .eq("bidder_id", userId)
+          .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching bids:", error);
+        if (error) throw error
+        setBids(data || [])
+      } catch (error) {
+        console.error("Error fetching bids:", error);
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (userId) {
+      fetchBids()
+    }
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   // Group bids by auction (showing highest bid per auction)

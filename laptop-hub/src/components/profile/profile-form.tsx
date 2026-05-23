@@ -21,10 +21,14 @@ import { toast } from "sonner"
 import * as z from "zod"
 
 const profileSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
+  firstName: z.string().min(2, {
+    message: "First name must be at least 2 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Last name must be at least 2 characters.",
   }),
   email: z.string().email().readonly(),
+  phone: z.string().optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -38,11 +42,17 @@ export function ProfileForm({ user, userData }: ProfileFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
+  const nameParts = (userData?.name || "").split(" ")
+  const firstName = nameParts[0] || ""
+  const lastName = nameParts.slice(1).join(" ") || ""
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: userData?.name || "",
+      firstName: firstName,
+      lastName: lastName,
       email: user.email || "",
+      phone: userData?.phone || "",
     },
   })
 
@@ -50,10 +60,12 @@ export function ProfileForm({ user, userData }: ProfileFormProps) {
     setIsLoading(true)
 
     try {
+      const fullName = `${data.firstName} ${data.lastName}`.trim()
       const { error } = await supabase
         .from("users")
         .update({
-          name: data.name,
+          name: fullName,
+          // phone: data.phone, // Uncomment if phone field is added to users table
         })
         .eq("id", user.id)
 
@@ -73,39 +85,66 @@ export function ProfileForm({ user, userData }: ProfileFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-xl">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input {...field} disabled />
-              </FormControl>
-              <FormDescription>
-                Your email address cannot be changed.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Your Name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Changes"}
-        </Button>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John" {...field} className="bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20 h-12" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Doe" {...field} className="bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20 h-12" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email Address</FormLabel>
+                <FormControl>
+                  <Input {...field} disabled className="bg-muted/10 border-none h-12 opacity-70" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="+1 (555) 123-4567" {...field} className="bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20 h-12" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isLoading} className="px-8 h-12">
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </form>
     </Form>
   )

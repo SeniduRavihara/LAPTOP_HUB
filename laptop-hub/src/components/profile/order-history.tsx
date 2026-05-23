@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import {
     Table,
@@ -7,19 +10,42 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { createClient } from "@/lib/supabase/server"
-
-import { AuthService } from "@/services/auth-service"
+import { supabase } from "@/lib/supabase/client"
 import { OrderService } from "@/services/order-service"
+import { Loader2 } from "lucide-react"
 
-export async function OrderHistory() {
-  const supabase = await createClient()
-  const user = (await AuthService.getUser(supabase)) as any
+interface OrderHistoryProps {
+  userId: string
+}
 
-  if (!user || !user.id) return null
-  
-  const ordersResponse = await OrderService.getUserOrders(user.id, supabase)
-  const orders = (ordersResponse || []) as any[]
+export function OrderHistory({ userId }: OrderHistoryProps) {
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const ordersResponse = await OrderService.getUserOrders(userId, supabase)
+        setOrders(ordersResponse || [])
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (userId) {
+      fetchOrders()
+    }
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
