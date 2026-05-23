@@ -198,191 +198,24 @@ export default function HomePageClient({ products = [], auctions = [] }: HomePag
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              {/* Lenovo IdeaPad Banner */}
-              <div className="min-w-full relative h-[300px] bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
-                <div className="absolute inset-0 flex items-center justify-between px-12">
-                  <div className="text-white space-y-3 z-10">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold tracking-wide">Lenovo</span>
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-bold mb-2">
-                      IdeaPad 1
-                    </h2>
-                    <p className="text-xl md:text-3xl font-light italic">Budget friendly</p>
-                    <div className="hidden md:flex gap-6 text-sm mt-3">
-                      <div className="font-bold">AMD Ryzen 3 7320U Processor</div>
-                      <div className="font-bold">512GB M.2 NVMe SSD</div>
-                    </div>
-                    <div className="hidden md:flex gap-6 text-sm">
-                      <div className="font-bold">16GB LPDDR5 RAM</div>
-                      <div className="font-bold">15.6" FHD Display</div>
-                    </div>
-                    <div className="text-sm font-bold mt-2">AMD Radeon 610M Graphics</div>
-                  </div>
-                  <div className="relative hidden md:block">
-                    <div className="absolute -top-8 -right-8 bg-red-600 text-white px-4 py-2 text-sm font-bold rounded z-10">
-                      NEW<br />ARRIVALS
-                    </div>
-                    <div className="w-[400px] h-[200px] bg-slate-700/30 rounded-2xl flex items-center justify-center border border-slate-600/30">
-                      <svg className="w-48 h-48 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="absolute top-2 right-2 text-red-600 font-bold text-2xl">
-                      Lenovo
-                    </div>
-                  </div>
-                </div>
+              {/* Slide 1 */}
+              <div className="min-w-full relative h-[300px] md:h-[400px]">
+                <img src="/slider/slide1.jpeg" alt="Banner 1" className="w-full h-full object-cover" />
               </div>
 
-              {/* MSI Summit Banner */}
-              <div className="min-w-full relative h-[300px] bg-gradient-to-r from-blue-900 via-blue-800 to-cyan-900">
-                <div className="absolute inset-0 flex items-center justify-between px-12">
-                  <div className="text-white space-y-3 z-10">
-                    <p className="text-sm font-semibold tracking-wide hidden md:block">New Amplify AI Power 2 in 1 - Ultra 7</p>
-                    <h2 className="text-3xl md:text-5xl font-bold mb-2">
-                      Summit 16 AI Evo A2HM
-                    </h2>
-                    <p className="text-xl md:text-2xl font-light">Determined to Succeed</p>
-                    <div className="mt-4">
-                      <div className="inline-block bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm">
-                        FREE!
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-4">
-                      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="2" y="3" width="20" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <path d="M8 10h8M8 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      <span className="text-xs">Windows 11</span>
-                    </div>
-                  </div>
-                  <div className="relative hidden md:block">
-                    <div className="absolute -top-8 -right-8 bg-red-600 text-white px-4 py-2 text-sm font-bold rounded z-10">
-                      NEW<br />ARRIVAL
-                    </div>
-                    <div className="w-[450px] h-[200px] bg-blue-800/30 rounded-2xl flex items-center justify-center border border-blue-600/30 relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-32 h-32 rounded-full bg-blue-500/30 flex items-center justify-center">
-                          <span className="text-6xl font-bold text-blue-300">AI</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="absolute top-2 right-2 font-bold text-2xl text-white">
-                      MSI
-                    </div>
-                  </div>
-                </div>
+              {/* Slide 2 */}
+              <div className="min-w-full relative h-[300px] md:h-[400px]">
+                <img src="/slider/slide2.jpeg" alt="Banner 2" className="w-full h-full object-cover" />
               </div>
 
-              {/* ASUS TUF Gaming Banner */}
-              <div className="min-w-full relative h-[300px] bg-gradient-to-r from-orange-950 via-orange-900 to-red-950">
-                <div className="absolute inset-0 flex items-center justify-between px-12">
-                  <div className="text-white space-y-3 z-10">
-                    <p className="text-sm font-light italic hidden md:block">best gaming experience</p>
-                    <h2 className="text-3xl md:text-5xl font-bold mb-2">
-                      ASUS TUF GAMING A16
-                    </h2>
-                    <p className="text-lg md:text-xl font-semibold text-orange-400">EXPANSIVE IMMERSION. MECHANIZED PERFORMANCE.</p>
-                    <div className="hidden md:grid grid-cols-2 gap-4 text-sm mt-3">
-                      <div>
-                        <div className="font-bold text-orange-400">AMD RYZEN 7 7445HS</div>
-                        <div className="text-xs">PROCESSOR</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-orange-400">512GB NVME</div>
-                        <div className="text-xs">M.2 SSD</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-orange-400">16GB DDR5</div>
-                        <div className="text-xs">RAM</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-orange-400">16" WUXGA IPS</div>
-                        <div className="text-xs">DISPLAY</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative hidden md:block">
-                    <div className="absolute -top-8 -right-8 bg-red-600 text-white px-4 py-2 text-sm font-bold rounded z-10">
-                      NEW<br />ARRIVAL
-                    </div>
-                    <div className="w-[400px] h-[200px] bg-orange-900/30 rounded-2xl flex items-center justify-center border border-orange-600/30 relative">
-                      <div className="text-8xl font-bold text-orange-600/50">TUF</div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 flex gap-2">
-                      <div className="bg-orange-600 px-3 py-1 rounded">
-                        <span className="text-xs font-bold">AMD RYZEN</span>
-                      </div>
-                      <div className="bg-green-600 px-3 py-1 rounded">
-                        <span className="text-xs font-bold">GEFORCE RTX</span>
-                      </div>
-                    </div>
-                    <div className="absolute bottom-4 left-4">
-                      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="2" y="3" width="20" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <path d="M8 10h8M8 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      <span className="text-xs">Windows 11</span>
-                    </div>
-                    <div className="absolute top-2 right-2 font-bold text-3xl text-white">
-                      ASUS
-                    </div>
-                  </div>
-                </div>
+              {/* Slide 3 */}
+              <div className="min-w-full relative h-[300px] md:h-[400px]">
+                <img src="/slider/slide3.jpeg" alt="Banner 3" className="w-full h-full object-cover" />
               </div>
 
-              {/* Gaming Banner - MSI */}
-              <div className="min-w-full relative h-[300px] bg-gradient-to-r from-purple-950 via-purple-900 to-pink-950">
-                <div className="absolute inset-0 flex items-center justify-between px-12">
-                  <div className="text-white space-y-3 max-w-xl z-10">
-                    <p className="text-xl tracking-widest font-light hidden md:block">PLAY WITH POWER</p>
-                    <h2 className="text-5xl md:text-7xl font-bold tracking-wider">
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-yellow-400">
-                        GAMING
-                      </span>
-                    </h2>
-                    <p className="text-xl md:text-3xl font-light italic">never ever give up</p>
-                    <div className="hidden md:grid grid-cols-2 gap-4 text-sm mt-4">
-                      <div>
-                        <div className="font-bold text-yellow-400">Intel Core i7-13700H</div>
-                        <div className="text-xs">PROCESSOR</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-yellow-400">NVIDIA RTX 4060</div>
-                        <div className="text-xs">GRAPHICS</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-yellow-400">32GB DDR5</div>
-                        <div className="text-xs">RAM</div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-yellow-400">165Hz Display</div>
-                        <div className="text-xs">REFRESH RATE</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative hidden md:block">
-                    <div className="w-[450px] h-[250px] bg-gradient-to-br from-purple-800/30 to-pink-800/30 rounded-2xl flex items-center justify-center border border-purple-600/30 relative overflow-hidden">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-9xl font-black text-purple-600/20">MSI</div>
-                      </div>
-                      <div className="relative z-10">
-                        <svg className="w-56 h-56 text-purple-300/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 flex gap-2">
-                      <div className="bg-gradient-to-r from-red-600 to-orange-600 px-3 py-1 rounded">
-                        <span className="text-xs font-bold">RTX 4060</span>
-                      </div>
-                      <div className="bg-blue-600 px-3 py-1 rounded">
-                        <span className="text-xs font-bold">Intel i7</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* Slide 4 */}
+              <div className="min-w-full relative h-[300px] md:h-[400px]">
+                <img src="/slider/slide4.jpeg" alt="Banner 4" className="w-full h-full object-cover" />
               </div>
             </div>
 
