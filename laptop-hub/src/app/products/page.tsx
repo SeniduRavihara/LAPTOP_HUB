@@ -66,10 +66,8 @@ export default async function ProductsPage(props: {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Filters */}
-          <aside className="lg:w-64 shrink-0 space-y-6">
-            <div className="lg:sticky lg:top-24">
-              <ProductFilters />
-            </div>
+          <aside className="lg:w-64 shrink-0 lg:sticky lg:top-24 self-start">
+            <ProductFilters />
           </aside>
 
           {/* Main Content */}

@@ -427,7 +427,7 @@ export default function HomePageClient({ products = [], auctions = [] }: HomePag
       >
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Filters */}
-          <aside className="lg:w-80 flex-shrink-0 hidden md:block">
+          <aside className="lg:w-80 flex-shrink-0 hidden md:block lg:sticky lg:top-24 self-start">
             <ProductFilters />
           </aside>
 
