@@ -9,13 +9,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/user-nav";
 import { useState, useEffect } from "react";
-import { Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Suspense } from "react";
 
 function NavbarContent() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAiMode, setIsAiMode] = useState(false);
   const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const pathname = usePathname();
@@ -57,20 +58,30 @@ function NavbarContent() {
           {/* Search Bar - Hidden on auth pages */}
           {!isAuthPage && (
             <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4 hidden md:flex">
-              <div className="relative w-full">
+              <div className={`relative w-full rounded-lg transition-all ${isAiMode ? 'ring-2 ring-primary/50 shadow-[0_0_15px_rgba(var(--primary),0.2)]' : ''}`}>
                 <Input
                   type="text"
-                  placeholder="Search laptops, brands, or specs..."
+                  placeholder={isAiMode ? "Ask AI to find a laptop..." : "Search laptops, brands, or specs..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary focus:bg-background transition-all"
+                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary focus:bg-background transition-all ${isAiMode ? 'border-primary/50 text-primary-foreground placeholder:text-primary/60' : ''}`}
                 />
-                <button 
-                  type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAiMode(!isAiMode)}
+                    className={`p-1.5 rounded-md transition-all ${isAiMode ? 'bg-primary/20 text-primary scale-110' : 'text-muted-foreground hover:bg-secondary-foreground/5 hover:text-foreground'}`}
+                    title="Toggle AI Mode"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="submit"
+                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </form>
           )}
@@ -120,19 +131,30 @@ function NavbarContent() {
         {!isAuthPage && (
           <div className="md:hidden pb-4">
             <form onSubmit={handleSearch} className="relative w-full">
-              <Input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 rounded-lg border border-border bg-secondary text-sm"
-              />
-              <button 
-                type="submit"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              >
-                <Search className="w-4 h-4" />
-              </button>
+              <div className={`relative w-full rounded-lg transition-all ${isAiMode ? 'ring-2 ring-primary/50 shadow-[0_0_10px_rgba(var(--primary),0.2)]' : ''}`}>
+                <Input
+                  type="text"
+                  placeholder={isAiMode ? "Ask AI..." : "Search..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary text-sm transition-all ${isAiMode ? 'border-primary/50' : ''}`}
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAiMode(!isAiMode)}
+                    className={`p-1.5 rounded-md transition-all ${isAiMode ? 'bg-primary/20 text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="submit"
+                    className="p-1.5 text-muted-foreground"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         )}

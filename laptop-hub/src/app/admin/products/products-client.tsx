@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,19 +19,69 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search, X } from "lucide-react"
+import { Search, X, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
+import { adminDeleteProduct } from "@/app/actions/product"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface ProductsClientProps {
     initialProducts: any[]
 }
 
 export function ProductsClient({ initialProducts }: ProductsClientProps) {
+    const [products, setProducts] = useState(initialProducts)
     const [search, setSearch] = useState("")
     const [typeFilter, setTypeFilter] = useState("all")
+    const [productToDelete, setProductToDelete] = useState<any>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const { toast } = useToast()
+
+    useEffect(() => {
+        setProducts(initialProducts)
+    }, [initialProducts])
+
+    const handleDelete = async () => {
+        if (!productToDelete) return
+        setIsDeleting(true)
+        try {
+            const res = await adminDeleteProduct(productToDelete.id)
+            if (res.success) {
+                setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id))
+                toast({
+                    title: "Product deleted",
+                    description: "Product was successfully deleted from system inventory.",
+                })
+            } else {
+                toast({
+                    title: "Error deleting product",
+                    description: res.error,
+                    variant: "destructive",
+                })
+            }
+        } catch (err: any) {
+            toast({
+                title: "Unexpected error",
+                description: err.message || "An unexpected error occurred.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsDeleting(false)
+            setProductToDelete(null)
+        }
+    }
 
     const filteredProducts = useMemo(() => {
-        return initialProducts.filter((product) => {
+        return products.filter((product) => {
             const name = (product.name || "").toLowerCase()
             const brand = (product.brand || "").toLowerCase()
             const searchTerm = search.toLowerCase()
@@ -44,7 +94,8 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
 
             return matchesSearch && matchesType
         })
-    }, [initialProducts, search, typeFilter])
+    }, [products, search, typeFilter])
+
 
     return (
         <div className="space-y-4">
@@ -112,11 +163,22 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
                                 <TableCell className="font-mono text-sm">LKR {product.price.toLocaleString()}</TableCell>
                                 <TableCell>{product.stock}</TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="outline" size="sm" asChild className="hover:bg-primary hover:text-white transition-all">
-                                        <Link href={`/admin/products/${product.id}/edit`}>
-                                            Edit
-                                        </Link>
-                                    </Button>
+                                    <div className="flex justify-end gap-2">
+                                        <Button variant="outline" size="sm" asChild className="hover:bg-primary hover:text-white transition-all">
+                                            <Link href={`/admin/products/${product.id}/edit`}>
+                                                Edit
+                                            </Link>
+                                        </Button>
+                                        <Button 
+                                            variant="destructive" 
+                                            size="sm" 
+                                            onClick={() => setProductToDelete(product)}
+                                            className="transition-all"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -130,6 +192,28 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the product <strong>{productToDelete?.name}</strong> from the database. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
+

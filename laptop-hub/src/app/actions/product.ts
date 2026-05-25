@@ -92,3 +92,49 @@ export async function adminCreateProduct(productData: any) {
     return { success: false, error: error.message }
   }
 }
+
+export async function adminDeleteProduct(id: string) {
+  try {
+    const user = await getRequestingUser()
+    if (!user) return { success: false, error: "Unauthorized" }
+
+    // Check if the user is an admin OR the owner of the product
+    if (user.role !== 'admin') {
+      const { data: existingProduct } = await supabaseAdmin
+        .from("products")
+        .select("seller_id")
+        .eq("id", id)
+        .single()
+        
+      if (!existingProduct || existingProduct.seller_id !== user.id) {
+        return { success: false, error: "You do not have permission to delete this product" }
+      }
+    }
+
+    // Attempt deletion
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      console.error("Admin Product Delete Error:", error)
+      if (error.code === '23503') {
+        return { 
+          success: false, 
+          error: "This product cannot be deleted because it is associated with active orders, auction bids, or reviews. Try setting its stock to 0 or ending the auctions instead." 
+        }
+      }
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath("/admin/products")
+    revalidatePath("/seller/products")
+    
+    return { success: true }
+  } catch (error: any) {
+    console.error("Unexpected Admin Product Delete Error:", error)
+    return { success: false, error: error.message }
+  }
+}
+

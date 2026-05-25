@@ -92,6 +92,7 @@ export function SellerAuctionsClient({ initialAuctions }: SellerAuctionsClientPr
                             <TableHead className="font-semibold">Current Bid</TableHead>
                             <TableHead className="font-semibold text-center">Bids</TableHead>
                             <TableHead className="font-semibold">Status</TableHead>
+                            <TableHead className="font-semibold text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -118,12 +119,17 @@ export function SellerAuctionsClient({ initialAuctions }: SellerAuctionsClientPr
                                             {auction.status}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" asChild>
+                                            <a href={`/seller/auctions/${auction.id}`}>View Details</a>
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             )
                         })}
                         {filteredAuctions.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-32 text-muted-foreground italic">
+                                <TableCell colSpan={8} className="text-center h-32 text-muted-foreground italic">
                                     No auctions found matching your search.
                                 </TableCell>
                             </TableRow>
