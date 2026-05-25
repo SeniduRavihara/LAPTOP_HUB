@@ -7,6 +7,7 @@ import { ProductService } from "@/services/product-service";
 import Link from "next/link";
 import { SortSelector } from "@/components/sort-selector";
 import { Search, SlidersHorizontal, PackageX } from "lucide-react";
+import { AIRecommendations } from "@/components/ai-recommendations";
 
 export default async function ProductsPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
@@ -141,6 +142,8 @@ export default async function ProductsPage(props: {
                   );
                 })}
               </div>
+            ) : query ? (
+              <AIRecommendations query={query} />
             ) : (
               /* No Results State */
               <div className="bg-card border border-border border-dashed rounded-2xl p-12 flex flex-col items-center justify-center text-center space-y-4">
