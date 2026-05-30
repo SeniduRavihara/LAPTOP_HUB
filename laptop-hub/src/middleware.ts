@@ -33,8 +33,8 @@ export async function middleware(request: NextRequest) {
   // Wrap in a try/catch block to avoid hanging the entire request
   let user = null;
   try {
-    const { data } = await supabase.auth.getUser();
-    user = data?.user || null;
+    const { data } = await supabase.auth.getSession();
+    user = data?.session?.user || null;
   } catch (err) {
     console.error("❌ Middleware Auth Error:", err);
   }

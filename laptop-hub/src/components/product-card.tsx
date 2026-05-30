@@ -180,7 +180,6 @@ export function ProductCard({
 
           {/* Action Button */}
           <Button
-            onClick={(e) => e.preventDefault()}
             disabled={stock === 0 && !isAuction}
             className={`w-full rounded-lg h-9 font-medium transition-all duration-300 ${
               isAuction 

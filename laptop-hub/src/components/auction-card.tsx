@@ -135,7 +135,6 @@ export function AuctionCard({
           {/* Buttons */}
           <div className="flex gap-2 pt-2">
             <Button
-              onClick={(e) => e.preventDefault()}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium transition-colors text-sm"
             >
               Place Bid

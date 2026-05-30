@@ -119,11 +119,18 @@ export function AuctionsClient({ initialAuctions }: AuctionsClientProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/admin/products/${auction.product_id}/edit`}>
-                                                Edit Product
-                                            </Link>
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="default" size="sm" asChild>
+                                                <Link href={`/admin/auctions/${auction.id}`}>
+                                                    View Auction
+                                                </Link>
+                                            </Button>
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/admin/products/${auction.product_id}/edit`}>
+                                                    Edit Product
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )
