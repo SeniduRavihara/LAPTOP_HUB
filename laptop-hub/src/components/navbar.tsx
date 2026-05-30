@@ -64,7 +64,7 @@ function NavbarContent() {
                   placeholder={isAiMode ? "Ask AI to find a laptop..." : "Search laptops, brands, or specs..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary focus:bg-background transition-all ${isAiMode ? 'border-primary/50 text-primary-foreground placeholder:text-primary/60' : ''}`}
+                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary text-foreground focus:bg-background transition-all ${isAiMode ? 'border-primary/50 placeholder:text-primary/60' : ''}`}
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button
@@ -137,7 +137,7 @@ function NavbarContent() {
                   placeholder={isAiMode ? "Ask AI..." : "Search..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary text-sm transition-all ${isAiMode ? 'border-primary/50' : ''}`}
+                  className={`w-full pl-4 pr-20 rounded-lg border border-border bg-secondary text-foreground text-sm transition-all ${isAiMode ? 'border-primary/50 placeholder:text-primary/60' : ''}`}
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button
