@@ -10,8 +10,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    await AuthService.exchangeCodeForSession(code, supabase)
-    
+    try {
+      await AuthService.exchangeCodeForSession(code, supabase)
+    } catch (error) {
+      console.error('Auth callback code exchange failed:', error)
+      return NextResponse.redirect(
+        `${origin}/forgot-password?error=invalid_or_expired_link`
+      )
+    }
+
     // If there is a next parameter (like /reset-password), prioritize it
     if (next !== '/') {
       return NextResponse.redirect(`${origin}${next}`)

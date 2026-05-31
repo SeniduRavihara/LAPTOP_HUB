@@ -2,6 +2,18 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Supabase auth links (password reset, email confirm) sometimes land on the
+  // Site URL root when the full callback URL isn't whitelisted in Supabase.
+  const code = request.nextUrl.searchParams.get('code')
+  if (code && !request.nextUrl.pathname.startsWith('/auth/callback')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    if (!url.searchParams.has('next')) {
+      url.searchParams.set('next', '/reset-password')
+    }
+    return NextResponse.redirect(url)
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })

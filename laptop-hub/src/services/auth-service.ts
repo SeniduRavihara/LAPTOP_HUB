@@ -148,7 +148,7 @@ export class AuthService {
         const supabase = supabaseOverride || browserClient;
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${getURL()}/auth/callback?next=/reset-password`,
+                redirectTo: `${getURL()}/reset-password`,
             });
             if (error) throw error;
         } catch (error) {

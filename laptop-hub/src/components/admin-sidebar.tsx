@@ -40,9 +40,12 @@ export function AdminSidebar() {
 
   return (
     <aside className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 overflow-hidden flex flex-col transition-all duration-300 z-20 select-none ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      <div className="p-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm z-10 flex items-center justify-between cursor-default">
+      <div className="p-4 border-b border-sidebar-border bg-sidebar/50 backdrop-blur-sm z-10 flex items-center justify-between">
         {/* Admin Header - Compact */}
-        <div className={`flex items-center gap-3 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+        <Link
+          href="/"
+          className={`flex items-center gap-3 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'} hover:opacity-80`}
+        >
           <Avatar className="w-10 h-10 border border-sidebar-border bg-sidebar-primary text-sidebar-primary-foreground font-bold flex-shrink-0">
             <AvatarImage src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture} />
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-bold">
@@ -53,7 +56,7 @@ export function AdminSidebar() {
             <p className="font-bold text-sidebar-foreground text-sm truncate">Admin Panel</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">System Control</p>
           </div>
-        </div>
+        </Link>
         
         <button 
           onClick={toggle}

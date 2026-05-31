@@ -27,7 +27,8 @@ export function ProductFilters() {
   // Initialize filters from URL
   useEffect(() => {
     setSelectedBrands(searchParams.get('brands')?.split(',').filter(Boolean) || [])
-    setSelectedTypes(searchParams.get('types')?.split(',').filter(Boolean) || [])
+    const urlTypes = searchParams.get('types')
+    setSelectedTypes(urlTypes ? urlTypes.split(',').filter(Boolean) : ['Standard'])
     setSelectedProcessors(searchParams.get('processors')?.split(',').filter(Boolean) || [])
     setSelectedRams(searchParams.get('rams')?.split(',').filter(Boolean) || [])
     setMinPrice(searchParams.get('minPrice') || '')
@@ -110,8 +111,12 @@ export function ProductFilters() {
     else params.delete('brands')
     
     // Set or delete type params
-    if (selectedTypes.length > 0) params.set('types', selectedTypes.join(','))
-    else params.delete('types')
+    // If it's exactly ['Standard'], we don't need to put it in the URL because it's the default
+    if (selectedTypes.length > 0 && !(selectedTypes.length === 1 && selectedTypes[0] === 'Standard')) {
+      params.set('types', selectedTypes.join(','))
+    } else {
+      params.delete('types')
+    }
     
     // Set or delete processor params
     if (selectedProcessors.length > 0) params.set('processors', selectedProcessors.join(','))
@@ -136,7 +141,7 @@ export function ProductFilters() {
 
   const handleReset = () => {
     setSelectedBrands([])
-    setSelectedTypes([])
+    setSelectedTypes(['Standard'])
     setSelectedProcessors([])
     setSelectedRams([])
     setMinPrice('')

@@ -48,7 +48,7 @@ export function ResetPasswordForm() {
     try {
       await AuthService.updatePassword(data.password);
       toast.success("Password updated! Please sign in with your new password.");
-      router.push("/login");
+      router.push("/dashboard");
     } catch (error: any) {
       toast.error(error.message ?? "Something went wrong. Please try again.");
     } finally {

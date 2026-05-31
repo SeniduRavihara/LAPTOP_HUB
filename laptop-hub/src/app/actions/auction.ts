@@ -31,10 +31,32 @@ async function checkAuctionOwnership(id: string, userId: string, role: string) {
   return auction && auction.seller_id === userId
 }
 
+function validateAuctionData(auctionData: any) {
+  const startingBid = Number(auctionData?.starting_bid)
+  if (!Number.isFinite(startingBid) || startingBid <= 0) {
+    return "Starting bid must be greater than 0"
+  }
+
+  if (auctionData?.reserve_price !== null && auctionData?.reserve_price !== undefined && auctionData?.reserve_price !== "") {
+    const reservePrice = Number(auctionData.reserve_price)
+    if (!Number.isFinite(reservePrice)) {
+      return "Reserve price must be a valid number"
+    }
+    if (reservePrice < startingBid) {
+      return "Reserve price must be greater than or equal to starting bid"
+    }
+  }
+
+  return null
+}
+
 export async function adminCreateAuction(auctionData: any) {
   try {
     const user = await getRequestingUser()
     if (!user) return { success: false, error: "Unauthorized" }
+
+    const validationError = validateAuctionData(auctionData)
+    if (validationError) return { success: false, error: validationError }
 
     // Logic: Only owner of the product (or admin) can create auction
     if (user.role !== 'admin') {
@@ -77,6 +99,9 @@ export async function adminUpdateAuction(id: string, updates: any) {
   try {
     const user = await getRequestingUser()
     if (!user) return { success: false, error: "Unauthorized" }
+
+    const validationError = validateAuctionData(updates)
+    if (validationError) return { success: false, error: validationError }
 
     const isOwner = await checkAuctionOwnership(id, user.id, user.role || 'customer')
     if (!isOwner) return { success: false, error: "Unauthorized auction ownership" }
