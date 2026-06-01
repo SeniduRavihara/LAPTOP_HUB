@@ -92,16 +92,18 @@ export default async function ProductsPage(props: {
             {/* Search Results Header */}
             <div className="bg-card border border-border rounded-xl p-4 md:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+                <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-start gap-2">
                   {query ? (
                     <>
-                      <Search className="w-5 h-5 text-primary" />
-                      Results for <span className="text-primary">"{query}"</span>
+                      <Search className="w-5 h-5 md:w-6 md:h-6 text-primary shrink-0 mt-0.5" />
+                      <span className="break-words">
+                        Results for <span className="text-primary">"{query}"</span>
+                      </span>
                     </>
                   ) : (
                     <>
-                      <SlidersHorizontal className="w-5 h-5 text-primary" />
-                      All Products
+                      <SlidersHorizontal className="w-5 h-5 md:w-6 md:h-6 text-primary shrink-0 mt-0.5" />
+                      <span>All Products</span>
                     </>
                   )}
                 </h1>
