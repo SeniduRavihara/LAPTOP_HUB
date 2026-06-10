@@ -31,6 +31,7 @@ export class ProductService {
                 .select(`
                     *,
                     auctions (
+                        id,
                         status,
                         starting_bid,
                         end_time,
@@ -72,6 +73,36 @@ export class ProductService {
                 });
 
                 if (error) throw error;
+
+                // Merge missing auction IDs from the database if the search_products RPC doesn't return them
+                if (data && data.length > 0) {
+                    const productsWithAuctions = data.filter((p: any) => {
+                        const auction = Array.isArray(p.auctions) ? p.auctions[0] : p.auctions;
+                        return auction && auction.status === 'active' && !auction.id;
+                    });
+
+                    if (productsWithAuctions.length > 0) {
+                        const productIds = productsWithAuctions.map((p: any) => p.id);
+                        const { data: realAuctions, error: auctionsError } = await supabase
+                            .from('auctions')
+                            .select('id, product_id, status, starting_bid, end_time')
+                            .in('product_id', productIds)
+                            .eq('status', 'active');
+
+                        if (!auctionsError && realAuctions) {
+                            const auctionMap = new Map(realAuctions.map((a: any) => [a.product_id, a]));
+                            for (const p of productsWithAuctions) {
+                                const realAuction = auctionMap.get(p.id) as any;
+                                if (realAuction) {
+                                    const origAuction = Array.isArray(p.auctions) ? p.auctions[0] : p.auctions;
+                                    const mergedAuction = { ...origAuction, id: realAuction.id };
+                                    p.auctions = Array.isArray(p.auctions) ? [mergedAuction] : mergedAuction;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return data;
             }
 
@@ -81,6 +112,7 @@ export class ProductService {
                 .select(`
                     *,
                     auctions (
+                        id,
                         status,
                         starting_bid,
                         end_time,
@@ -124,7 +156,7 @@ export class ProductService {
         try {
             let query = supabase
                 .from('products')
-                .select('*, auctions(status)')
+                .select('*, auctions(id, status)')
                 .eq('seller_id', sellerId)
                 .order('created_at', { ascending: false });
 

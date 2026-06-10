@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Clock, Eye, Gavel, Loader2, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuctionService } from "@/services/auction-service";
@@ -30,6 +31,7 @@ export default function AuctionDetailPage() {
   const [bidAmount, setBidAmount] = useState("");
   const [isWatching, setIsWatching] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [winnerOrderId, setWinnerOrderId] = useState<string | null>(null);
   
   const supabase = createClient();
   const timeLeft = useCountdown(auction?.end_time);
@@ -54,6 +56,24 @@ export default function AuctionDetailPage() {
         if (user) {
           const inWishlist = await wishlistService.isInWishlist(data.product_id, user.id);
           setIsWatching(inWishlist);
+
+          // Check if the user is the winner of this auction if it is completed
+          if (processedAuction.status === 'completed' && data.bids.length > 0) {
+            const highestBid = data.bids.reduce((prev: any, current: any) => (prev.amount > current.amount) ? prev : current, { amount: 0 });
+            if (highestBid.bidder_id === user.id) {
+              const { data: orderItem } = await supabase
+                .from("order_items")
+                .select("order_id, orders!inner(customer_id, status)")
+                .eq("product_id", data.product_id)
+                .eq("orders.customer_id", user.id)
+                .eq("orders.status", "pending")
+                .maybeSingle();
+
+              if (orderItem) {
+                setWinnerOrderId((orderItem as any).order_id);
+              }
+            }
+          }
         }
 
         // Set initial active image
@@ -316,36 +336,74 @@ export default function AuctionDetailPage() {
               </div>
 
               {/* Bid Input */}
-              <div className="mb-6">
-                <label className="text-sm font-medium text-foreground mb-2 block">
-                  Your Bid (minimum LKR {(auction.currentBid + 1000).toLocaleString()} {/* Using 1000 as default increment */}
-                  )
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                      LKR
-                    </span>
-                    <Input
-                      type="number"
-                      placeholder={(auction.currentBid + 1000).toString()}
-                      value={bidAmount}
-                      onChange={(e) => setBidAmount(e.target.value)}
-                      className="pl-12"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleBid}
-                    disabled={isBidding}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {isBidding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Place Bid"}
-                  </Button>
+              {auction.status === 'completed' ? (
+                <div className="mb-6 p-4 rounded-lg bg-muted border border-border space-y-4">
+                  {winnerOrderId ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5 animate-pulse">
+                        🎉 Congratulations! You won this auction!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Your winning bid was <strong className="text-foreground">LKR {auction.currentBid.toLocaleString()}</strong>. Please complete your checkout to claim your laptop.
+                      </p>
+                      <Link href={`/checkout?orderId=${winnerOrderId}`} className="block w-full">
+                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+                          Complete Checkout & Pay
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : user && auction.bids?.length > 0 && auction.bids.reduce((prev: any, current: any) => (prev.amount > current.amount) ? prev : current, { amount: 0, bidder_id: "" }).bidder_id === user.id ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-green-600">
+                        🎉 You won this auction!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Order has been successfully placed / checkout completed.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        Auction Closed
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        This auction has ended. The winning bid was <strong className="text-foreground">LKR {auction.currentBid.toLocaleString()}</strong>.
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Minimum increment: LKR 1,000
-                </p>
-              </div>
+              ) : (
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Your Bid (minimum LKR {(auction.currentBid + 1000).toLocaleString()} {/* Using 1000 as default increment */}
+                    )
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        LKR
+                      </span>
+                      <Input
+                        type="number"
+                        placeholder={(auction.currentBid + 1000).toString()}
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        className="pl-12"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleBid}
+                      disabled={isBidding}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {isBidding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Place Bid"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Minimum increment: LKR 1,000
+                  </p>
+                </div>
+              )}
 
               {/* Watch Button */}
               <Button

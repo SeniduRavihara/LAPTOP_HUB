@@ -2,34 +2,11 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 
-const data = [
-  {
-    name: "Jan",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-  {
-    name: "Feb",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-  {
-    name: "Mar",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-  {
-    name: "Apr",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-  {
-    name: "May",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-  {
-    name: "Jun",
-    total: Math.floor(Math.random() * 2000) + 500,
-  },
-]
+interface SellerOverviewProps {
+  data: { name: string; total: number }[]
+}
 
-export function SellerOverview() {
+export function SellerOverview({ data }: SellerOverviewProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
@@ -45,7 +22,7 @@ export function SellerOverview() {
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => `$${value}`}
+          tickFormatter={(value) => `LKR ${value.toLocaleString()}`}
         />
         <Bar
           dataKey="total"

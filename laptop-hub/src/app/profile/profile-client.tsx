@@ -46,10 +46,6 @@ export function ProfileClient({ user, userData, stats }: ProfileClientProps) {
                     <h3 className="text-2xl font-bold text-foreground mb-1">{userData?.name || "User"}</h3>
                     <p className="text-muted-foreground">{user.email}</p>
                   </div>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Edit2 size={16} />
-                    Edit Profile
-                  </Button>
                 </div>
               </CardContent>
             </Card>

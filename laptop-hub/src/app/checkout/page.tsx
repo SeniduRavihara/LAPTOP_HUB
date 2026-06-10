@@ -1,23 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Plus, CheckCircle2, CreditCard, Truck } from "lucide-react";
+import { MapPin, Plus, CheckCircle2, CreditCard, Truck, Loader2 } from "lucide-react";
 import { Address, AddressService } from "@/services/address-service";
+import { supabase } from "@/lib/supabase/client";
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const { cartItems, cartTotal } = useCart();
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const orderId = searchParams ? searchParams.get("orderId") : null;
+
+  const [pendingOrder, setPendingOrder] = useState<any>(null);
+  const [pendingOrderItems, setPendingOrderItems] = useState<any[]>([]);
+  const [isOrderLoading, setIsOrderLoading] = useState(!!orderId);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -37,11 +43,69 @@ export default function CheckoutPage() {
   const [payHereParams, setPayHereParams] = useState<any>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  // Sync email when user loads
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (user && !formData.email) {
+      setFormData(prev => ({ ...prev, email: user.email || "" }));
+    }
+  }, [user]);
+
+  // Load existing order if orderId is provided
+  useEffect(() => {
+    async function loadOrder() {
+      if (orderId && user) {
+        try {
+          setIsOrderLoading(true);
+          const { OrderService } = await import("@/services/order-service");
+          const order = await OrderService.getOrderById(orderId, supabase);
+          
+          if (!order) {
+            alert("Order not found.");
+            router.push("/profile");
+            return;
+          }
+
+          if (order.customer_id !== user.id) {
+            alert("Unauthorized access to this order.");
+            router.push("/profile");
+            return;
+          }
+
+          if (order.status !== 'pending' || order.payment_status === 'paid') {
+            alert("This order is already processed or completed.");
+            router.push("/profile");
+            return;
+          }
+
+          setPendingOrder(order);
+          
+          // Map order_items to matching cartItems structure
+          const mappedItems = order.order_items.map((oi: any) => ({
+            id: oi.product_id,
+            name: oi.products?.name || `Product #${oi.product_id}`,
+            price: oi.unit_price,
+            quantity: oi.quantity,
+          }));
+          setPendingOrderItems(mappedItems);
+        } catch (error) {
+          console.error("Failed to load order details:", error);
+          alert("Failed to load order details.");
+          router.push("/profile");
+        } finally {
+          setIsOrderLoading(false);
+        }
+      }
+    }
+    if (orderId && user) {
+      loadOrder();
+    }
+  }, [orderId, user, router]);
+
+  useEffect(() => {
+    if (!orderId && cartItems.length === 0) {
       router.push("/cart");
     }
-  }, [cartItems, router]);
+  }, [cartItems, router, orderId]);
 
   // Fetch addresses
   useEffect(() => {
@@ -97,10 +161,11 @@ export default function CheckoutPage() {
     }
   }, [payHereParams]);
 
-  const subtotal = cartTotal;
-  const tax = Math.round(subtotal * 0.08 * 100) / 100;
-  const shipping = subtotal > 50000 ? 0 : 2500;
-  const total = subtotal + tax + shipping;
+  const checkoutItems = orderId ? pendingOrderItems : cartItems;
+  const subtotal = orderId ? (pendingOrder?.total_amount || 0) : cartTotal;
+  const tax = orderId ? 0 : Math.round(subtotal * 0.08 * 100) / 100;
+  const shipping = orderId ? 0 : (subtotal > 50000 ? 0 : 2500);
+  const total = orderId ? subtotal : (subtotal + tax + shipping);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -112,30 +177,56 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      const orderData = {
-        customer_id: user?.id,
-        customer_name: formData.fullName,
-        customer_email: formData.email,
-        total_amount: total,
-        shipping_address: {
-          address: formData.address,
-          city: formData.city,
-          postalCode: formData.postalCode,
-        },
-        contact_phone: formData.phone,
-      };
+      if (orderId) {
+        const shippingData = {
+          customer_name: formData.fullName,
+          customer_email: formData.email,
+          contact_phone: formData.phone,
+          shipping_address: {
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+          }
+        };
 
-      const { createOrderAction } = await import("@/app/actions/order");
-      const result = await createOrderAction(orderData, cartItems, paymentMethod);
+        const { completePendingOrderAction } = await import("@/app/actions/order");
+        const result = await completePendingOrderAction(orderId, shippingData, paymentMethod);
 
-      if (result.success) {
-        if (result.paymentMethod === 'cod') {
-          router.push(result.redirectUrl as string);
-        } else if (result.params) {
-          setPayHereParams(result);
+        if (result.success) {
+          if (result.paymentMethod === 'cod') {
+            router.push(result.redirectUrl as string);
+          } else if (result.params) {
+            setPayHereParams(result);
+          }
+        } else {
+          throw new Error(result.error || "Failed to complete order.");
         }
       } else {
-        throw new Error(result.error || "Failed to create order.");
+        const orderData = {
+          customer_id: user?.id,
+          customer_name: formData.fullName,
+          customer_email: formData.email,
+          total_amount: total,
+          shipping_address: {
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+          },
+          contact_phone: formData.phone,
+        };
+
+        const { createOrderAction } = await import("@/app/actions/order");
+        const result = await createOrderAction(orderData, cartItems, paymentMethod);
+
+        if (result.success) {
+          if (result.paymentMethod === 'cod') {
+            router.push(result.redirectUrl as string);
+          } else if (result.params) {
+            setPayHereParams(result);
+          }
+        } else {
+          throw new Error(result.error || "Failed to create order.");
+        }
       }
     } catch (error: any) {
       console.error("Checkout failed:", error);
@@ -143,6 +234,21 @@ export default function CheckoutPage() {
       setIsProcessing(false);
     }
   };
+
+  if (isOrderLoading) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen bg-background py-12 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">Loading order details...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -362,7 +468,7 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-foreground">Online Payment</h3>
-                        <p className="text-xs text-muted-foreground mt-1">Pay securely via PayHere (Card, Koko, etc.)</p>
+                        <p className="text-xs text-muted-foreground mt-1">Pay securely via Visa, Mastercard &amp; AMEX</p>
                       </div>
                     </div>
 
@@ -397,7 +503,7 @@ export default function CheckoutPage() {
               <div className="bg-card border border-border rounded-lg p-6 h-fit sticky top-24">
                 <h2 className="text-xl font-bold text-foreground mb-6">Order Summary</h2>
                 <div className="space-y-4 mb-6">
-                  {cartItems.map((item) => (
+                  {checkoutItems.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         {item.name} x {item.quantity}
@@ -414,18 +520,28 @@ export default function CheckoutPage() {
                         LKR {subtotal.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm mt-2">
-                      <span className="text-muted-foreground">Tax (8%)</span>
-                      <span className="font-semibold text-foreground">
-                        LKR {tax.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-2">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-semibold text-foreground text-green-600">
-                        {shipping === 0 ? "Free" : `LKR ${shipping.toLocaleString()}`}
-                      </span>
-                    </div>
+                    {tax > 0 && (
+                      <div className="flex justify-between text-sm mt-2">
+                        <span className="text-muted-foreground">Tax (8%)</span>
+                        <span className="font-semibold text-foreground">
+                          LKR {tax.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {shipping > 0 && (
+                      <div className="flex justify-between text-sm mt-2">
+                        <span className="text-muted-foreground">Shipping</span>
+                        <span className="font-semibold text-foreground text-green-600">
+                          LKR {shipping.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {orderId && (
+                      <div className="flex justify-between text-sm mt-2">
+                        <span className="text-muted-foreground">Shipping & Tax</span>
+                        <span className="font-semibold text-green-600">Inclusive</span>
+                      </div>
+                    )}
                   </div>
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between items-center">
@@ -439,7 +555,7 @@ export default function CheckoutPage() {
                 <Button 
                   type="submit" 
                   form="checkout-form"
-                  disabled={isProcessing || cartItems.length === 0}
+                  disabled={isProcessing || checkoutItems.length === 0}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base"
                 >
                   {isProcessing ? "Redirecting to PayHere..." : "Proceed to Payment"}
@@ -458,9 +574,9 @@ export default function CheckoutPage() {
                     ))}
                   </form>
                 )}
-                <Link href="/cart">
+                <Link href={orderId ? "/profile" : "/cart"}>
                   <Button variant="ghost" className="w-full mt-4 text-muted-foreground hover:text-foreground">
-                    Back to Cart
+                    {orderId ? "Back to Profile" : "Back to Cart"}
                   </Button>
                 </Link>
               </div>
@@ -470,5 +586,17 @@ export default function CheckoutPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

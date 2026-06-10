@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { AuctionService } from "@/services/auction-service";
 
 export async function GET(request: Request) {
   // Simple authorization for cron
@@ -30,24 +31,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "No expired auctions found" });
     }
 
-    const expiredIds = expiredAuctions.map((a) => a.id);
+    const closedAuctions = [];
+    const errors = [];
 
-    // Update their status to completed
-    const { error: updateError } = await supabaseAdmin
-      .from("auctions")
-      .update({ status: "completed", updated_at: now })
-      .in("id", expiredIds);
-
-    if (updateError) {
-      console.error("Error updating expired auctions:", updateError);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    // Process each expired auction using AuctionService.closeAuction
+    for (const auction of expiredAuctions) {
+      try {
+        await AuctionService.closeAuction(auction.id, supabaseAdmin);
+        closedAuctions.push(auction.id);
+      } catch (err: any) {
+        console.error(`Error closing auction ${auction.id}:`, err);
+        errors.push({ id: auction.id, error: err.message });
+      }
     }
 
-    // TODO: Future enhancement - Create pending orders for the winners
-
     return NextResponse.json({
-      message: `Successfully closed ${expiredIds.length} auctions.`,
-      closedAuctions: expiredIds,
+      message: `Processed ${expiredAuctions.length} expired auctions. Successfully closed ${closedAuctions.length}.`,
+      closedAuctions,
+      errors: errors.length > 0 ? errors : undefined
     });
   } catch (error: any) {
     console.error("Cron execution failed:", error);

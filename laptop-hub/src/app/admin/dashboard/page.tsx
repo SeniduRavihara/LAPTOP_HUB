@@ -8,12 +8,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs"
 import { DashboardService } from "@/services/dashboard-service"
 import { createClient } from "@/lib/supabase/server"
 
@@ -22,6 +16,8 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   const supabase = await createClient()
   const stats = await DashboardService.getOverviewStats(supabase)
+  const monthlyRevenue = await DashboardService.getAdminMonthlyRevenue(supabase)
+  const recentOrders = await DashboardService.getAdminRecentOrders(5, supabase)
 
   return (
     <div className="flex-1 space-y-4 pt-6">
@@ -32,21 +28,8 @@ export default async function DashboardPage() {
           <Button>Download</Button>
         </div>
       </div>
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics" disabled>
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="reports" disabled>
-            Reports
-          </TabsTrigger>
-          <TabsTrigger value="notifications" disabled>
-            Notifications
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -155,23 +138,24 @@ export default async function DashboardPage() {
                 <CardTitle>Overview</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <Overview />
+                <Overview data={monthlyRevenue} />
               </CardContent>
             </Card>
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Recent Sales</CardTitle>
                 <CardDescription>
-                  Real-time sales feed
+                  {recentOrders.length > 0
+                    ? `There are ${recentOrders.length} recent order${recentOrders.length > 1 ? "s" : ""}.`
+                    : "No recent orders yet."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <RecentSales orders={recentOrders} />
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </div>
   )
 }

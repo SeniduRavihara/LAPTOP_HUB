@@ -1,4 +1,6 @@
+export const dynamic = "force-dynamic";
 import { ProductCard } from "@/components/product-card";
+import { AuctionCard } from "@/components/auction-card";
 import { ProductFilters } from "@/components/product-filters";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -126,6 +128,25 @@ export default async function ProductsPage(props: {
                     ? (auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid)
                     : null;
 
+                  if (isAuction) {
+                    return (
+                      <AuctionCard 
+                        key={auction.id}
+                        id={auction.id}
+                        productId={product.id}
+                        name={product.name || 'Unknown Laptop'}
+                        brand={product.brand}
+                        image={product.images?.[0]}
+                        currentBid={currentBid}
+                        numberOfBids={auction.bids?.length || 0}
+                        endTime={auction.end_time}
+                        rating={4.8}
+                        seller="Verified Seller"
+                        initialIsWatching={wishlistedProductIds.has(product.id)}
+                      />
+                    );
+                  }
+
                   return (
                     <ProductCard 
                       key={product.id} 
@@ -138,10 +159,10 @@ export default async function ProductsPage(props: {
                       reviews={12}
                       stock={product.stock}
                       badge={product.badge}
-                      isAuction={isAuction}
-                      auctionId={isAuction ? auction.id : null}
-                      currentBid={currentBid}
-                      endTime={isAuction ? auction.end_time : null}
+                      isAuction={false}
+                      auctionId={null}
+                      currentBid={null}
+                      endTime={null}
                       initialIsWishlisted={wishlistedProductIds.has(product.id)}
                     />
                   );

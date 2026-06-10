@@ -21,10 +21,11 @@ interface MyBidsProps {
 
 export function MyBids({ userId }: MyBidsProps) {
   const [bids, setBids] = useState<any[]>([])
+  const [pendingOrders, setPendingOrders] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchBids() {
+    async function fetchBidsAndOrders() {
       try {
         const { data, error } = await supabase
           .from("bids")
@@ -37,8 +38,13 @@ export function MyBids({ userId }: MyBidsProps) {
               id,
               status,
               end_time,
+              product_id,
               products:product_id (
                 name
+              ),
+              bids (
+                amount,
+                bidder_id
               )
             )
           `)
@@ -47,15 +53,32 @@ export function MyBids({ userId }: MyBidsProps) {
 
         if (error) throw error
         setBids(data || [])
+
+        // Also fetch user's pending orders to map to won auctions
+        const { data: userOrders, error: ordersError } = await supabase
+          .from("orders")
+          .select("id, order_items(product_id)")
+          .eq("customer_id", userId)
+          .eq("status", "pending");
+
+        if (!ordersError && userOrders) {
+          const mapping: Record<string, string> = {};
+          userOrders.forEach((o: any) => {
+            o.order_items?.forEach((item: any) => {
+              mapping[item.product_id] = o.id;
+            });
+          });
+          setPendingOrders(mapping);
+        }
       } catch (error) {
-        console.error("Error fetching bids:", error);
+        console.error("Error fetching bids or orders:", error);
       } finally {
         setLoading(false)
       }
     }
 
     if (userId) {
-      fetchBids()
+      fetchBidsAndOrders()
     }
   }, [userId])
 
@@ -92,32 +115,52 @@ export function MyBids({ userId }: MyBidsProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {uniqueBids.map((bid) => (
-              <TableRow key={bid.id}>
-                <TableCell className="font-medium">
-                  {bid.auctions.products.name}
-                </TableCell>
-                <TableCell className="font-semibold text-primary">
-                  LKR {Number(bid.amount).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={bid.auctions.status === 'active' ? 'default' : 'secondary'}>
-                    {bid.auctions.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(bid.auctions.end_time).toLocaleDateString()}{" "}
-                  {new Date(bid.auctions.end_time).toLocaleTimeString()}
-                </TableCell>
-                <TableCell>
-                  <Link href={`/auctions/${bid.auction_id}`}>
-                    <Button variant="ghost" size="sm">
-                      View <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
+            {uniqueBids.map((bid) => {
+              const overallMaxBid = bid.auctions.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || 0;
+              const isCompleted = bid.auctions.status === 'completed';
+              const isWinner = isCompleted && bid.amount === overallMaxBid;
+              const pendingOrderId = pendingOrders[bid.auctions.product_id];
+
+              return (
+                <TableRow key={bid.id}>
+                  <TableCell className="font-medium">
+                    {bid.auctions.products.name}
+                  </TableCell>
+                  <TableCell className="font-semibold text-primary">
+                    LKR {Number(bid.amount).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    {isWinner ? (
+                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-none">
+                        Won 🎉
+                      </Badge>
+                    ) : (
+                      <Badge variant={bid.auctions.status === 'active' ? 'default' : 'secondary'}>
+                        {bid.auctions.status}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(bid.auctions.end_time).toLocaleDateString()}{" "}
+                    {new Date(bid.auctions.end_time).toLocaleTimeString()}
+                  </TableCell>
+                  <TableCell className="flex items-center gap-2">
+                    <Link href={`/auctions/${bid.auction_id}`}>
+                      <Button variant="ghost" size="sm">
+                        View <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                    {isWinner && pendingOrderId && (
+                      <Link href={`/checkout?orderId=${pendingOrderId}`}>
+                        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8">
+                          Checkout & Pay
+                        </Button>
+                      </Link>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {uniqueBids.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center h-24">

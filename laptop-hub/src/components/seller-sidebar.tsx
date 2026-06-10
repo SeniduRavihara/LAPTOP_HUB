@@ -20,9 +20,9 @@ export function SellerSidebar() {
     { label: 'Add Product', href: '/seller/products/new', icon: 'plus' },
     { label: 'My Auctions', href: '/seller/auctions', icon: 'gavel' },
     { label: 'Orders', href: '/seller/orders', icon: 'shopping' },
-    { label: 'Messages', href: '/seller/messages', icon: 'message' },
-    { label: 'Analytics', href: '/seller/analytics', icon: 'chart' },
-    { label: 'Store Settings', href: '/seller/settings', icon: 'settings' },
+    // { label: 'Messages', href: '/seller/messages', icon: 'message' },
+    // { label: 'Analytics', href: '/seller/analytics', icon: 'chart' },
+    // { label: 'Store Settings', href: '/seller/settings', icon: 'settings' },
   ]
 
   const handleLogout = async () => {

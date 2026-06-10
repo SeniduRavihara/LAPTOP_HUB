@@ -27,6 +27,11 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
 
   // Quick filter for the displayed recent products
   const filteredProducts = products.filter(product => {
+    // Exclude auction products from the standard recent products section
+    const auction = Array.isArray(product.auctions) ? product.auctions[0] : product.auctions;
+    const isAuction = auction && (auction.status === 'active' || auction.status === 'pending');
+    if (isAuction) return false;
+
     if (activeFilter === 'premium') return product.price >= 100000 // assuming LKR, premium > 100k
     if (activeFilter === 'gaming') return product.name?.toLowerCase().includes('gaming') || product.brand?.toLowerCase() === 'msi' || product.brand?.toLowerCase() === 'asus'
     return true
@@ -301,26 +306,45 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
                   ? (auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid)
                   : null;
 
-                return (
-                  <ProductCard 
-                    key={product.id} 
-                    id={product.id}
-                    name={product.name}
-                    brand={product.brand}
-                    price={product.price}
-                    image={product.images?.[0]}
-                    rating={4.5}
-                    reviews={12}
-                    stock={product.stock}
-                    badge={product.badge}
-                    isAuction={isAuction}
-                    auctionId={isAuction ? auction.id : null}
-                    currentBid={currentBid}
-                    endTime={isAuction ? auction.end_time : null}
-                    initialIsWishlisted={wishlistedProductIds.includes(product.id)}
-                  />
-                );
-              })}
+                 if (isAuction) {
+                    return (
+                      <AuctionCard 
+                        key={auction.id}
+                        id={auction.id}
+                        productId={product.id}
+                        name={product.name || 'Unknown Laptop'}
+                        brand={product.brand}
+                        image={product.images?.[0]}
+                        currentBid={currentBid}
+                        numberOfBids={auction.bids?.length || 0}
+                        endTime={auction.end_time}
+                        rating={4.8}
+                        seller="Verified Seller"
+                        initialIsWatching={wishlistedProductIds.includes(product.id)}
+                      />
+                    );
+                  }
+
+                  return (
+                    <ProductCard 
+                      key={product.id} 
+                      id={product.id}
+                      name={product.name}
+                      brand={product.brand}
+                      price={product.price}
+                      image={product.images?.[0]}
+                      rating={4.5}
+                      reviews={12}
+                      stock={product.stock}
+                      badge={product.badge}
+                      isAuction={false}
+                      auctionId={null}
+                      currentBid={null}
+                      endTime={null}
+                      initialIsWishlisted={wishlistedProductIds.includes(product.id)}
+                    />
+                  );
+                })}
             </div>
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">

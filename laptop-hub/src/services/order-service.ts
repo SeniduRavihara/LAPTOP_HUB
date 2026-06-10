@@ -115,4 +115,34 @@ export class OrderService {
             throw error;
         }
     }
+
+    /**
+     * Fetch order details by order ID or reference
+     */
+    static async getOrderById(orderId: string, supabaseOverride?: any) {
+        const supabase = this.getClient(supabaseOverride);
+        try {
+            // First try fetching by order ID (UUID)
+            const { data, error } = await supabase
+                .from("orders")
+                .select("*, order_items(*, products(*))")
+                .eq("id", orderId)
+                .single();
+
+            if (error) {
+                // If not found or if the ID was a string reference, try fetching by payment_reference
+                const { data: dataRef, error: errorRef } = await supabase
+                    .from("orders")
+                    .select("*, order_items(*, products(*))")
+                    .eq("payment_reference", orderId)
+                    .single();
+                if (errorRef) throw errorRef;
+                return dataRef;
+            }
+            return data;
+        } catch (error) {
+            console.error('OrderService.getOrderById error:', error);
+            throw error;
+        }
+    }
 }

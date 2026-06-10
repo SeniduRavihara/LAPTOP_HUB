@@ -22,7 +22,7 @@ export function ProductDetailPage({ product, initialIsWishlisted = false }: Prod
   const { user } = useAuth();
   const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
   const router = useRouter();
 
   useEffect(() => {
@@ -233,27 +233,47 @@ export function ProductDetailPage({ product, initialIsWishlisted = false }: Prod
                 </div>
               </div>
 
-              <Button 
-                onClick={() => {
-                  addToCart({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    quantity: quantity,
-                    image: images[0],
-                    brand: product.brand
-                  });
-                  toast.success(`${product.name} added to cart!`, {
-                    action: {
-                      label: "View Cart",
-                      onClick: () => router.push("/cart")
-                    }
-                  });
-                }}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg"
-              >
-                Add to Cart
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: quantity,
+                      image: images[0],
+                      brand: product.brand
+                    });
+                    toast.success(`${product.name} added to cart!`, {
+                      action: {
+                        label: "View Cart",
+                        onClick: () => router.push("/cart")
+                      }
+                    });
+                  }}
+                  variant="outline"
+                  className="flex-1 h-12 rounded-lg font-semibold text-lg border-border"
+                >
+                  Add to Cart
+                </Button>
+                <Button
+                  onClick={() => {
+                    clearCart();
+                    addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: quantity,
+                      image: images[0],
+                      brand: product.brand
+                    });
+                    router.push("/checkout");
+                  }}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg"
+                >
+                  Buy Now
+                </Button>
+              </div>
 
               <Button
                 onClick={handleWishlistToggle}

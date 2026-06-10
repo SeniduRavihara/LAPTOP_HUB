@@ -13,6 +13,8 @@ import {
 import { supabase } from "@/lib/supabase/client"
 import { OrderService } from "@/services/order-service"
 import { Loader2 } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 interface OrderHistoryProps {
   userId: string
@@ -60,6 +62,7 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
               <TableHead>Payment Status</TableHead>
               <TableHead>Payment Method</TableHead>
               <TableHead>Total Amount</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -83,11 +86,22 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="font-semibold">LKR {Number(order.total_amount).toLocaleString()}</TableCell>
+                <TableCell className="text-right">
+                  {order.status === 'pending' && order.payment_status === 'pending' ? (
+                    <Link href={`/checkout?orderId=${order.id}`}>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8">
+                        Complete Payment
+                      </Button>
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24">
+                <TableCell colSpan={7} className="text-center h-24">
                   No orders found.
                 </TableCell>
               </TableRow>

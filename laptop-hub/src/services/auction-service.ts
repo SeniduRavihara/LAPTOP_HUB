@@ -213,7 +213,7 @@ export class AuctionService {
             // End the auction
             const { data: updatedAuction, error: updateError } = await supabase
                 .from("auctions")
-                .update({ status: "ended" })
+                .update({ status: "completed" })
                 .eq("id", id)
                 .select()
                 .single();
@@ -225,13 +225,17 @@ export class AuctionService {
                 // Fetch winner user details
                 const { data: userData } = await supabase.from('users').select('*').eq('id', winnerId).single();
                 
-                const orderReference = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+                const orderReference = `ORD-AUC-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
                 const orderData = {
                     customer_id: winnerId,
                     customer_email: userData?.email || '',
-                    customer_name: userData?.full_name || 'Auction Winner',
-                    shipping_address: "Address Pending (Auction Won)",
+                    customer_name: userData?.name || 'Auction Winner',
+                    shipping_address: {
+                        address: "Address Pending (Auction Won)",
+                        city: "Pending",
+                        postalCode: "Pending"
+                    },
                     contact_phone: "Pending",
                     total_amount: winningBidAmount,
                     status: 'pending',
@@ -249,6 +253,12 @@ export class AuctionService {
                 const { OrderService } = await import('@/services/order-service');
                 try {
                     await OrderService.createOrder(orderData, orderItems, supabase);
+
+                    // Update product stock to 0 since it is sold
+                    await supabase
+                        .from("products")
+                        .update({ stock: 0 })
+                        .eq("id", auction.product_id);
                 } catch(err) {
                     console.error("Failed to create pending order for auction winner:", err);
                 }

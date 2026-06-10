@@ -92,6 +92,7 @@ BEGIN
     )::real as similarity_score,
     (
       SELECT jsonb_agg(jsonb_build_object(
+        'id', a.id,
         'status', a.status,
         'starting_bid', a.starting_bid,
         'end_time', a.end_time,

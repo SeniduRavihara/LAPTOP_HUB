@@ -32,7 +32,6 @@ export function AdminSidebar() {
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Auctions', href: '/admin/auctions', icon: Gavel },
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-    { label: 'Content Moderation', href: '/admin/moderation', icon: Flag },
     { label: 'Reports', href: '/admin/reports', icon: FileText },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'System Settings', href: '/admin/settings', icon: Settings },

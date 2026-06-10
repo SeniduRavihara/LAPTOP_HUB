@@ -26,17 +26,17 @@ export function ReportsClient() {
     const handleDownloadSales = async () => {
         setIsLoading('sales')
         try {
-            const { data, error } = await supabase.from('orders').select('id, user_id, total, status, created_at')
+            const { data, error } = await supabase.from('orders').select('id, customer_name, customer_email, total_amount, status, created_at')
             if (error) throw error
             if (!data || data.length === 0) {
                 toast.info("No sales data found")
                 return
             }
             
-            const headers = ["Order ID", "User ID", "Total Amount", "Status", "Date"]
+            const headers = ["Order ID", "Customer Name", "Customer Email", "Total Amount", "Status", "Date"]
             const csvRows = [headers.join(",")]
             data.forEach((order: any) => {
-                csvRows.push([order.id, order.user_id, order.total, order.status, order.created_at].join(","))
+                csvRows.push([order.id, `"${order.customer_name || ''}"`, order.customer_email || '', order.total_amount, order.status, order.created_at].join(","))
             })
             downloadCSV("sales_report.csv", csvRows.join("\n"))
             toast.success("Sales report downloaded successfully")
@@ -50,17 +50,17 @@ export function ReportsClient() {
     const handleDownloadUsers = async () => {
         setIsLoading('users')
         try {
-            const { data, error } = await supabase.from('users').select('id, email, full_name, role, created_at')
+            const { data, error } = await supabase.from('users').select('id, name, role, created_at')
             if (error) throw error
             if (!data || data.length === 0) {
                 toast.info("No users data found")
                 return
             }
             
-            const headers = ["User ID", "Email", "Full Name", "Role", "Join Date"]
+            const headers = ["User ID", "Name", "Role", "Join Date"]
             const csvRows = [headers.join(",")]
             data.forEach((u: any) => {
-                csvRows.push([u.id, u.email, `"${u.full_name || ''}"`, u.role, u.created_at].join(","))
+                csvRows.push([u.id, `"${u.name || ''}"`, u.role, u.created_at].join(","))
             })
             downloadCSV("users_report.csv", csvRows.join("\n"))
             toast.success("Users report downloaded successfully")
