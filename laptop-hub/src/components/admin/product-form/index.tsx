@@ -3,7 +3,7 @@
 import { supabase } from "@/lib/supabase/client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarIcon, Loader2, Plus, Upload, X } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/context/AuthContext"
@@ -41,6 +41,7 @@ type Props = { initialData?: any }
 
 export function ProductForm({ initialData }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -193,7 +194,8 @@ export function ProductForm({ initialData }: Props) {
       }
 
       toast.success(initialData?.id ? "Product updated" : "Product created")
-      router.push("/admin/products")
+      const redirectPath = pathname.startsWith("/seller") ? "/seller/products" : "/admin/products"
+      router.push(redirectPath)
       router.refresh()
     } catch (error: any) {
       toast.error(error.message || "Something went wrong. Please try again.")

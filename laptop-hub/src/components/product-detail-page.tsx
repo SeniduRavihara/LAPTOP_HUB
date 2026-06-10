@@ -163,39 +163,7 @@ export function ProductDetailPage({ product, initialIsWishlisted = false }: Prod
               </p>
             </div>
 
-            {/* Seller Info */}
-            <div className="bg-secondary border border-border rounded-lg p-4 mb-6">
-              <p className="text-sm text-muted-foreground mb-2">Sold by</p>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">
-                    {product.seller_name || "Verified Seller"}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.sellerRating || 4.8)
-                            ? "text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-1">
-                      {product.sellerRating || 4.8}
-                    </span>
-                  </div>
-                </div>
-                <Button variant="outline" className="border border-border">
-                  View Store
-                </Button>
-              </div>
-            </div>
+
 
             {/* Stock Status */}
             <div className="mb-6">

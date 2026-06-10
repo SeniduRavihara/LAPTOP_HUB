@@ -18,8 +18,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search, X } from "lucide-react"
+import { Eye, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { OrderDetailsDialog } from "@/components/order-details-dialog"
 
 interface SellerOrdersClientProps {
     initialOrderItems: any[]
@@ -28,6 +29,7 @@ interface SellerOrdersClientProps {
 export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProps) {
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [selectedOrder, setSelectedOrder] = useState<any>(null)
 
     const filteredItems = useMemo(() => {
         return initialOrderItems.filter((item) => {
@@ -62,6 +64,7 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
                         <SelectItem value="processing">Processing</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>
                         <SelectItem value="delivered">Delivered</SelectItem>
@@ -95,6 +98,7 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                             <TableHead className="font-semibold">Order Status</TableHead>
                             <TableHead className="font-semibold">Payment Status</TableHead>
                             <TableHead className="font-semibold">Date</TableHead>
+                            <TableHead className="font-semibold text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -132,12 +136,31 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formattedDate}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedOrder({
+                                                ...order,
+                                                order_items: [
+                                                    {
+                                                        ...item,
+                                                        products: product
+                                                    }
+                                                ]
+                                            })}
+                                            className="h-8 px-2 flex items-center gap-1 ml-auto text-primary hover:text-primary-semibold"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            View & Pack
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             )
                         })}
                         {filteredItems.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-32 text-muted-foreground italic">
+                                <TableCell colSpan={8} className="text-center h-32 text-muted-foreground italic">
                                     No orders found matching your search.
                                 </TableCell>
                             </TableRow>
@@ -145,6 +168,16 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                     </TableBody>
                 </Table>
             </div>
+
+            {selectedOrder && (
+                <OrderDetailsDialog
+                    isOpen={!!selectedOrder}
+                    onClose={() => setSelectedOrder(null)}
+                    order={selectedOrder}
+                    userRole="seller"
+                />
+            )}
         </div>
     )
 }
+

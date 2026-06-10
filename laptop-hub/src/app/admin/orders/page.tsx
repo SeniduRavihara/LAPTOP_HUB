@@ -6,7 +6,7 @@ export default async function OrdersPage() {
 
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("*")
+    .select("*, order_items(*, products(*))")
     .order("created_at", { ascending: false })
 
   if (error) {
