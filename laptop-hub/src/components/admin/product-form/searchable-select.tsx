@@ -56,7 +56,7 @@ export function SearchableSelect({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search\u2026"
+              placeholder="Search..."
               className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>

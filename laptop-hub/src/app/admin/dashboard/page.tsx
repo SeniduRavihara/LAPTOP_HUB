@@ -1,6 +1,6 @@
 import { Overview } from "@/components/admin/overview"
 import { RecentSales } from "@/components/admin/recent-sales"
-import { Button } from "@/components/ui/button"
+import { DownloadButton } from "@/components/admin/download-button"
 import {
     Card,
     CardContent,
@@ -25,7 +25,11 @@ export default async function DashboardPage() {
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
           {/* <CalendarDateRangePicker /> */}
-          <Button>Download</Button>
+          <DownloadButton 
+            stats={stats} 
+            monthlyRevenue={monthlyRevenue} 
+            recentOrders={recentOrders} 
+          />
         </div>
       </div>
       <div className="space-y-4">

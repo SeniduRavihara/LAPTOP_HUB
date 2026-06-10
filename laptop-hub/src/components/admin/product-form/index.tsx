@@ -100,10 +100,25 @@ export function ProductForm({ initialData }: Props) {
     const files = e.target.files
     if (!files || files.length === 0) return
     if (!user) { toast.error("You must be logged in to upload images"); return }
+    
+    const currentImages = form.getValues("images")
+    const remainingSlots = 5 - currentImages.length
+    
+    if (remainingSlots <= 0) {
+      toast.error("Maximum 5 images allowed")
+      if (e.target) e.target.value = ""
+      return
+    }
+    
+    const filesToUpload = Array.from(files).slice(0, remainingSlots)
+    if (files.length > remainingSlots) {
+      toast.warning(`Only the first ${remainingSlots} image(s) will be uploaded to stay within the limit of 5.`)
+    }
+    
     setIsUploading(true)
     const uploadedUrls: string[] = []
     try {
-      for (const file of Array.from(files)) {
+      for (const file of filesToUpload) {
         try {
           const publicUrl = await ProductService.uploadImage(file, user.id)
           uploadedUrls.push(publicUrl)
@@ -112,7 +127,7 @@ export function ProductForm({ initialData }: Props) {
         }
       }
       if (uploadedUrls.length > 0) {
-        form.setValue("images", [...form.getValues("images"), ...uploadedUrls])
+        form.setValue("images", [...currentImages, ...uploadedUrls])
         toast.success(`Uploaded ${uploadedUrls.length} image(s)`)
       }
     } finally {
@@ -234,7 +249,7 @@ export function ProductForm({ initialData }: Props) {
                     options={LAPTOP_BRANDS}
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    placeholder="Select brand\u2026"
+                    placeholder="Select brand..."
                     allowCustom
                   />
                 </FormControl>

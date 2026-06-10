@@ -7,7 +7,6 @@ import {
     Gavel,
     LayoutDashboard,
     Package,
-    Settings,
     ShoppingCart,
     Store,
     Users,
@@ -34,7 +33,6 @@ export function AdminSidebar() {
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { label: 'Reports', href: '/admin/reports', icon: FileText },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { label: 'System Settings', href: '/admin/settings', icon: Settings },
   ]
 
   return (

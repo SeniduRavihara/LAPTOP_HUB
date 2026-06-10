@@ -69,22 +69,22 @@ export function AIRecommendations({ query }: AIRecommendationsProps) {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none">
-          <Brain className="w-full h-full text-white" />
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-foreground shadow-sm relative overflow-hidden">
+        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-[0.03] pointer-events-none">
+          <Brain className="w-full h-full text-primary" />
         </div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-yellow-300 fill-yellow-300 animate-pulse" />
-              <span className="text-xs font-bold tracking-wider uppercase bg-white/20 px-2.5 py-0.5 rounded-full">
-                AI Smart Search
+              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+              <span className="text-xs font-bold tracking-wider uppercase bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                Smart Search
               </span>
             </div>
-            <h2 className="text-2xl font-black tracking-tight">AI Assistant Recommendations</h2>
-            <p className="text-white/80 text-sm mt-1 max-w-xl">
-              We couldn't find exact keyword matches, so our Gemini AI analyzed your request: 
-              <span className="italic font-medium text-yellow-200"> "{query}"</span> to find the best alternative matches in our inventory.
+            <h2 className="text-2xl font-bold tracking-tight">Recommended Alternatives</h2>
+            <p className="text-muted-foreground text-sm mt-1 max-w-xl">
+              We couldn't find exact keyword matches, so we analyzed your request: 
+              <span className="italic font-medium text-primary"> "{query}"</span> to find the best alternative matches in our inventory.
             </p>
           </div>
         </div>
@@ -182,13 +182,13 @@ export function AIRecommendations({ query }: AIRecommendationsProps) {
             return (
               <div key={p.id} className="relative flex flex-col h-full bg-card rounded-2xl border border-border/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
                 {/* AI Recommendation Badge / Reason Header */}
-                <div className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border-b border-border/50 p-4 relative">
+                <div className="bg-primary/5 border-b border-primary/10 p-4 relative">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-1.5 text-violet-700 dark:text-violet-400 font-bold text-xs">
-                      <Sparkles className="w-3.5 h-3.5 fill-violet-700 dark:fill-violet-400 animate-pulse" />
-                      AI RECOMMENDED
+                    <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+                      <Sparkles className="w-3.5 h-3.5 fill-primary animate-pulse" />
+                      SMART MATCH
                     </div>
-                    <Badge className="bg-violet-600 hover:bg-violet-700 text-white font-mono font-bold text-xs py-0.5 px-2 rounded-full">
+                    <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground font-mono font-bold text-xs py-0.5 px-2 rounded-full">
                       {rec.matchScore}% Match
                     </Badge>
                   </div>

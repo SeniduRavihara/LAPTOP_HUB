@@ -8,23 +8,35 @@ export class ReviewService {
   static async getProductReviews(productId: string, supabaseOverride?: any) {
     const supabase = this.getClient(supabaseOverride);
     try {
-      const { data, error } = await supabase
+      const { data: reviews, error } = await supabase
         .from("reviews")
-        .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          user:user_id (
-            id,
-            raw_user_meta_data
-          )
-        `)
+        .select("id, rating, comment, created_at, user_id")
         .eq("product_id", productId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      if (!reviews || reviews.length === 0) return [];
+
+      const userIds = [...new Set(reviews.map((r: any) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("users")
+        .select("id, name")
+        .in("id", userIds);
+
+      const profileMap = new Map(
+        (profiles || []).map((p: any) => [p.id, p.name])
+      );
+
+      return reviews.map((review: any) => ({
+        ...review,
+        user: {
+          id: review.user_id,
+          raw_user_meta_data: {
+            full_name: profileMap.get(review.user_id) || "Unknown User",
+          },
+        },
+      }));
     } catch (error) {
       console.error("ReviewService.getProductReviews error:", error);
       throw error;

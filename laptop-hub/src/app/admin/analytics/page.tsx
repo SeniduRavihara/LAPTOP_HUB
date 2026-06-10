@@ -1,4 +1,5 @@
 import { Overview } from "@/components/admin/overview"
+import { DownloadButton } from "@/components/admin/download-button"
 import {
     Card,
     CardContent,
@@ -14,6 +15,7 @@ export default async function AnalyticsPage() {
   const supabase = await createClient()
   const stats = await DashboardService.getOverviewStats(supabase)
   const monthlyRevenue = await DashboardService.getAdminMonthlyRevenue(supabase)
+  const recentOrders = await DashboardService.getAdminRecentOrders(5, supabase)
   
   // Calculate Average Order Value
   const { count: confirmedOrdersCount } = await supabase
@@ -29,6 +31,11 @@ export default async function AnalyticsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
+        <DownloadButton 
+          stats={stats} 
+          monthlyRevenue={monthlyRevenue} 
+          recentOrders={recentOrders} 
+        />
       </div>
 
       <div className="space-y-4">
