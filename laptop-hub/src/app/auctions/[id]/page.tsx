@@ -63,10 +63,11 @@ export default function AuctionDetailPage() {
             if (highestBid.bidder_id === user.id) {
               const { data: orderItem } = await supabase
                 .from("order_items")
-                .select("order_id, orders!inner(customer_id, status)")
+                .select("order_id, orders!inner(customer_id, status, payment_reference)")
                 .eq("product_id", data.product_id)
                 .eq("orders.customer_id", user.id)
                 .eq("orders.status", "pending")
+                .like("orders.payment_reference", "ORD-AUC-%")
                 .maybeSingle();
 
               if (orderItem) {

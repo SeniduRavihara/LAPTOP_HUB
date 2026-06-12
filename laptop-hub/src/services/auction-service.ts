@@ -239,7 +239,7 @@ export class AuctionService {
                     contact_phone: "Pending",
                     total_amount: winningBidAmount,
                     status: 'pending',
-                    payment_method: 'pending',
+                    payment_method: 'online',
                     payment_status: 'pending',
                     payment_reference: orderReference
                 };

@@ -23,9 +23,10 @@ import { Button } from "@/components/ui/button"
 
 interface SellerAuctionsClientProps {
     initialAuctions: any[]
+    orderPaymentStatusMap?: Record<string, string>
 }
 
-export function SellerAuctionsClient({ initialAuctions }: SellerAuctionsClientProps) {
+export function SellerAuctionsClient({ initialAuctions, orderPaymentStatusMap = {} }: SellerAuctionsClientProps) {
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
 
@@ -113,11 +114,19 @@ export function SellerAuctionsClient({ initialAuctions }: SellerAuctionsClientPr
                                     <TableCell className="font-semibold text-primary">LKR {currentBid.toLocaleString()}</TableCell>
                                     <TableCell className="text-center">{auction.bids?.length || 0}</TableCell>
                                     <TableCell>
-                                        <Badge variant={auction.status === 'active' ? 'default' : 'secondary'} className={
-                                            auction.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''
-                                        }>
-                                            {auction.status}
-                                        </Badge>
+                                        <div className="flex flex-col gap-1.5 items-start">
+                                            <Badge variant={auction.status === 'active' ? 'default' : 'secondary'} className={
+                                                auction.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''
+                                            }>
+                                                {auction.status}
+                                            </Badge>
+                                            
+                                            {auction.status === 'completed' && orderPaymentStatusMap[auction.product_id] && (
+                                                <Badge variant="outline" className={`text-[10px] ${orderPaymentStatusMap[auction.product_id] === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                                                    {orderPaymentStatusMap[auction.product_id] === 'paid' ? 'Paid ✅' : 'Awaiting Payment ⏳'}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm" asChild>

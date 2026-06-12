@@ -63,10 +63,12 @@ export function DownloadButton({ stats, monthlyRevenue, recentOrders }: Download
         csvContent += `${order.id},${name},${email},${order.total_amount},${status},${date}\n`
       })
 
-      const encodedUri = encodeURI(csvContent)
+      const blob = new Blob([csvContent.replace("data:text/csv;charset=utf-8,", "")], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement("a")
-      link.setAttribute("href", encodedUri)
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
       link.setAttribute("download", `dashboard_report_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

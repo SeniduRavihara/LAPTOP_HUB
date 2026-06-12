@@ -15,6 +15,7 @@ import { AuthService } from "@/services/auth-service";
 import { ProfileService } from "@/services/profile-service";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
+import { useCart } from "@/context/CartContext";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -29,6 +30,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { user, role } = useAuth();
+  const { clearCart } = useCart();
 
   useEffect(() => {
     if (user) {
@@ -59,6 +61,8 @@ export function LoginForm() {
 
       if (user) {
         const profile: any = await ProfileService.getUserProfile(user.id);
+
+        clearCart();
 
         toast.success("Signed in successfully!");
 

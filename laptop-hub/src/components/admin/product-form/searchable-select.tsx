@@ -44,7 +44,7 @@ export function SearchableSelect({
           !value && "text-muted-foreground"
         )}
       >
-        <span className="truncate">{value || placeholder || "Select\u2026"}</span>
+        <span className="truncate">{value || placeholder || "Select..."}</span>
         <ChevronDown className={cn("h-4 w-4 opacity-50 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 

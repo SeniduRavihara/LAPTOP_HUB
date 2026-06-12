@@ -8,7 +8,8 @@ import {
   Heart, 
   ShieldCheck,
   LogOut,
-  ArrowLeft
+  ArrowLeft,
+  Trophy
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -31,6 +32,7 @@ export function ProfileSidebar({ user, activeTab, onTabChange }: ProfileSidebarP
   const navItems = [
     { id: "profile", label: "Profile", icon: User },
     { id: "orders", label: "Orders", icon: ShoppingBag },
+    { id: "won-auctions", label: "Won Auctions", icon: Trophy },
     { id: "addresses", label: "Addresses", icon: MapPin },
     { id: "wishlist", label: "Wishlist", icon: Heart },
     { id: "security", label: "Security", icon: ShieldCheck },

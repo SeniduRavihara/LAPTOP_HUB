@@ -13,16 +13,18 @@ import {
 import { supabase } from "@/lib/supabase/client"
 import { OrderService } from "@/services/order-service"
 import { Loader2 } from "lucide-react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { OrderTrackingDialog } from "./order-tracking-dialog"
+import Link from "next/link"
 
 interface OrderHistoryProps {
   userId: string
 }
 
 export function OrderHistory({ userId }: OrderHistoryProps) {
-  const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [orders, setOrders] = useState<any[]>([])
+  const [trackingOrder, setTrackingOrder] = useState<any>(null)
 
   useEffect(() => {
     async function fetchOrders() {
@@ -93,6 +95,15 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
                         Complete Payment
                       </Button>
                     </Link>
+                  ) : order.payment_status === 'paid' && !['delivered', 'cancelled', 'refunded'].includes(order.status) ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setTrackingOrder(order)}
+                      className="text-xs h-8 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      Track Order
+                    </Button>
                   ) : (
                     <span className="text-xs text-muted-foreground">-</span>
                   )}
@@ -109,6 +120,12 @@ export function OrderHistory({ userId }: OrderHistoryProps) {
           </TableBody>
         </Table>
       </div>
+      
+      <OrderTrackingDialog 
+        isOpen={!!trackingOrder}
+        onClose={() => setTrackingOrder(null)}
+        order={trackingOrder}
+      />
     </div>
   )
 }

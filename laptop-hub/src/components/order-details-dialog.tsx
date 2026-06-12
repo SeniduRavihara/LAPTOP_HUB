@@ -18,7 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase/client"
+import { updateOrderStatusAction, markCodPaidAction } from "@/app/actions/order"
 import { toast } from "sonner"
 import { 
   Printer, 
@@ -57,6 +59,9 @@ export function OrderDetailsDialog({ isOpen, onClose, order, userRole }: OrderDe
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [currentStatus, setCurrentStatus] = useState(order?.status || "pending")
+  const [currentPaymentStatus, setCurrentPaymentStatus] = useState(order?.payment_status || "pending")
+  const [trackingNotes, setTrackingNotes] = useState("")
+  const [showTrackingInput, setShowTrackingInput] = useState(false)
 
   if (!order) return null
 
@@ -71,23 +76,46 @@ export function OrderDetailsDialog({ isOpen, onClose, order, userRole }: OrderDe
     return String(address)
   }
 
-  // Handle order status update
-  const handleStatusChange = async (newStatus: string) => {
+  // Handle order status update via server action
+  const handleStatusChange = async (newStatus: "confirmed" | "processing" | "shipped" | "delivered") => {
+    if (newStatus === "shipped" && !showTrackingInput) {
+        setShowTrackingInput(true)
+        return
+    }
+
     startTransition(async () => {
       try {
-        const { error } = await supabase
-          .from("orders")
-          .update({ status: newStatus })
-          .eq("id", order.id)
+        const result = await updateOrderStatusAction(
+            order.id, 
+            newStatus, 
+            newStatus === "shipped" ? trackingNotes : undefined
+        )
 
-        if (error) throw error
+        if (!result.success) throw new Error(result.error)
 
         setCurrentStatus(newStatus)
+        setShowTrackingInput(false)
         toast.success(`Order status updated to ${newStatus}`)
         router.refresh()
       } catch (error: any) {
         console.error("Error updating order status:", error)
         toast.error(error.message || "Failed to update order status")
+      }
+    })
+  }
+
+  /** Seller confirms they received cash for a COD order */
+  const handleMarkCodPaid = () => {
+    startTransition(async () => {
+      try {
+        const result = await markCodPaidAction(order.id)
+        if (!result.success) throw new Error(result.error)
+        setCurrentPaymentStatus('paid')
+        toast.success("Cash payment confirmed! Order is fully complete.")
+        router.refresh()
+      } catch (error: any) {
+        console.error("Error confirming COD payment:", error)
+        toast.error(error.message || "Failed to confirm cash payment")
       }
     })
   }
@@ -181,6 +209,12 @@ export function OrderDetailsDialog({ isOpen, onClose, order, userRole }: OrderDe
                     <td className="p-3">
                       <p className="font-bold text-sm">{item.products?.name || "Product Item"}</p>
                       <p className="text-xs text-slate-500">Brand: {item.products?.brand || "Generic"}</p>
+                      {item.products?.seller && (
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Seller: {item.products.seller.name}
+                          {item.products.seller.email ? ` (${item.products.seller.email})` : ""}
+                        </p>
+                      )}
                     </td>
                     <td className="p-3 text-center text-sm">{item.quantity}</td>
                     <td className="p-3 text-right text-sm">LKR {item.unit_price?.toLocaleString()}</td>
@@ -268,26 +302,83 @@ export function OrderDetailsDialog({ isOpen, onClose, order, userRole }: OrderDe
             </div>
 
             {/* Action Bar (Packing & Status Modification) */}
-            <div className="bg-white border p-4 rounded-xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">Order / Packing Action</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Update status to proceed with packing, dispatch, or completion.</p>
+            {userRole === "seller" && (
+              <div className="bg-white border p-4 rounded-xl shadow-sm flex flex-col justify-between items-start gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">Order / Packing Action</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Update status to proceed with packing, dispatch, or completion.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full">
+                  {currentStatus === "pending" && (
+                    <Button 
+                        onClick={() => handleStatusChange("confirmed")} 
+                        disabled={isPending}
+                        className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
+                    >
+                        Confirm Order
+                    </Button>
+                  )}
+                  {currentStatus === "confirmed" && (
+                    <Button 
+                        onClick={() => handleStatusChange("processing")} 
+                        disabled={isPending}
+                        className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto"
+                    >
+                        Mark as Processing
+                    </Button>
+                  )}
+                  {currentStatus === "processing" && (
+                    <div className="flex flex-col sm:flex-row w-full gap-2">
+                        {showTrackingInput && (
+                            <Input 
+                                placeholder="Enter tracking info (optional)"
+                                value={trackingNotes}
+                                onChange={(e) => setTrackingNotes(e.target.value)}
+                                className="w-full sm:w-64"
+                            />
+                        )}
+                        <Button 
+                            onClick={() => handleStatusChange("shipped")} 
+                            disabled={isPending}
+                            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                        >
+                            Mark as Shipped
+                        </Button>
+                    </div>
+                  )}
+                  {currentStatus === "shipped" && (
+                    <div className="flex flex-col sm:flex-row gap-3 items-center w-full">
+                      <Button 
+                          onClick={() => handleStatusChange("delivered")} 
+                          disabled={isPending}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+                      >
+                          Mark as Delivered
+                      </Button>
+                      <div className="text-sm text-slate-500 font-medium flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-md">
+                          <Truck className="w-4 h-4" /> Shipped - Delivery Pending
+                      </div>
+                    </div>
+                  )}
+                  {currentStatus === "delivered" && (
+                    order.payment_method === "cod" && currentPaymentStatus !== "paid" ? (
+                      <Button
+                        onClick={handleMarkCodPaid}
+                        disabled={isPending}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Confirm Cash Received (COD)
+                      </Button>
+                    ) : (
+                      <div className="text-sm text-emerald-600 font-bold flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-md w-full border border-emerald-100">
+                          <CheckCircle2 className="w-4 h-4" /> Order Fulfilled
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                <Select value={currentStatus} onValueChange={handleStatusChange} disabled={isPending}>
-                  <SelectTrigger className="w-full sm:w-[160px] bg-slate-50 border-slate-200">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ORDER_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status} className="capitalize text-slate-800">
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
 
             {/* User & Shipping details split */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -373,6 +464,12 @@ export function OrderDetailsDialog({ isOpen, onClose, order, userRole }: OrderDe
                             <div>
                               <p className="font-bold text-slate-800 text-sm leading-snug">{item.products?.name || "Product Item"}</p>
                               <p className="text-xs text-slate-400 mt-0.5">Brand: {item.products?.brand || "Generic"}</p>
+                              {item.products?.seller && (
+                                <p className="text-xs text-indigo-600 font-semibold mt-1">
+                                  Seller: {item.products.seller.name}
+                                  {item.products.seller.email ? ` (${item.products.seller.email})` : ""}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>

@@ -63,6 +63,16 @@ export function ProductForm({ initialData }: Props) {
     return Object.entries(rawSpecs).map(([key, value]) => ({ key, value: String(value) }))
   }
 
+  const getActiveOrLatestAuction = () => {
+    const auctions = initialData?.auction
+    if (!auctions) return null
+    if (Array.isArray(auctions)) {
+      return auctions.find((a: any) => a.status === 'active') || auctions[0]
+    }
+    return auctions
+  }
+  const targetAuction = getActiveOrLatestAuction()
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData
@@ -73,17 +83,11 @@ export function ProductForm({ initialData }: Props) {
           badge: initialData.badge ?? "",
           images: initialData.images || [],
           specs: parseInitialSpecs(initialData.specs),
-          isAuction: !!(Array.isArray(initialData.auction) ? initialData.auction[0] : initialData.auction),
-          starting_bid:
-            (Array.isArray(initialData.auction) ? initialData.auction[0]?.starting_bid : initialData.auction?.starting_bid) ?? 0,
-          reserve_price:
-            (Array.isArray(initialData.auction) ? initialData.auction[0]?.reserve_price : initialData.auction?.reserve_price) ?? "",
-          start_time: Array.isArray(initialData.auction)
-            ? initialData.auction[0]?.start_time ? new Date(initialData.auction[0].start_time) : null
-            : initialData.auction?.start_time ? new Date(initialData.auction.start_time) : null,
-          end_time: Array.isArray(initialData.auction)
-            ? initialData.auction[0]?.end_time ? new Date(initialData.auction[0].end_time) : null
-            : initialData.auction?.end_time ? new Date(initialData.auction.end_time) : null,
+          isAuction: !!(targetAuction && targetAuction.status === 'active'),
+          starting_bid: targetAuction?.starting_bid ?? 0,
+          reserve_price: targetAuction?.reserve_price ?? "",
+          start_time: targetAuction?.start_time ? new Date(targetAuction.start_time) : null,
+          end_time: targetAuction?.end_time ? new Date(targetAuction.end_time) : null,
         }
       : {
           name: "", brand: "", description: "", price: 0, original_price: "",
@@ -195,13 +199,19 @@ export function ProductForm({ initialData }: Props) {
           end_time: data.end_time.toISOString(),
           status: "active" as const,
         }
-        const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
+        const auctions = initialData?.auction
+        const existingAuction = Array.isArray(auctions)
+          ? auctions.find((a: any) => a.status === 'active')
+          : auctions
         const auctionResult = existingAuction
           ? await adminUpdateAuction(existingAuction.id, auctionData)
           : await adminCreateAuction(auctionData)
         if (!auctionResult.success) throw new Error(auctionResult.error || "Failed to save auction")
       } else {
-        const existingAuction = Array.isArray(initialData?.auction) ? initialData.auction[0] : initialData?.auction
+        const auctions = initialData?.auction
+        const existingAuction = Array.isArray(auctions)
+          ? auctions.find((a: any) => a.status === 'active')
+          : auctions
         if (existingAuction) {
           const cancelResult = await adminCancelAuction(existingAuction.id)
           if (!cancelResult.success) throw new Error(cancelResult.error || "Failed to cancel auction")
@@ -324,7 +334,7 @@ export function ProductForm({ initialData }: Props) {
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Tell customers about this laptop\u2026"
+                    placeholder="Tell customers about this laptop..."
                     className="min-h-[120px]"
                     {...field}
                     value={field.value ?? ""}
@@ -559,7 +569,7 @@ export function ProductForm({ initialData }: Props) {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving\u2026
+              Saving...
             </>
           ) : initialData ? "Save Changes" : "Create Product"}
         </Button>

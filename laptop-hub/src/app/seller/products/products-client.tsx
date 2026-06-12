@@ -87,7 +87,11 @@ export function SellerProductsClient({ initialProducts }: SellerProductsClientPr
             const searchTerm = search.toLowerCase()
             const matchesSearch = name.includes(searchTerm) || brand.includes(searchTerm)
             
-            const isAuction = product.auctions && (Array.isArray(product.auctions) ? product.auctions.length > 0 : !!product.auctions)
+            const isAuction = product.auctions && (
+                Array.isArray(product.auctions)
+                    ? product.auctions.some((a: any) => a.status === 'active')
+                    : product.auctions.status === 'active'
+            )
             let matchesType = true
             if (typeFilter === "auction") matchesType = isAuction
             if (typeFilter === "standard") matchesType = !isAuction
@@ -154,7 +158,7 @@ export function SellerProductsClient({ initialProducts }: SellerProductsClientPr
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell>{product.brand}</TableCell>
                                 <TableCell>
-                                    {product.auctions && (Array.isArray(product.auctions) ? product.auctions.length > 0 : !!product.auctions) ? (
+                                    {product.auctions && (Array.isArray(product.auctions) ? product.auctions.some((a: any) => a.status === 'active') : product.auctions.status === 'active') ? (
                                         <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 border-none">Auction</Badge>
                                     ) : (
                                         <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none">Standard</Badge>

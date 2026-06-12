@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ProfileSidebar } from "@/components/profile/profile-sidebar"
 import { ProfileStats } from "@/components/profile/profile-stats"
 import { ProfileForm } from "@/components/profile/profile-form"
@@ -8,6 +9,7 @@ import { ChangePasswordForm } from "@/components/profile/change-password-form"
 import { AddressList } from "@/components/profile/address-list"
 import { OrderHistory } from "@/components/profile/order-history"
 import { MyBids } from "@/components/profile/my-bids"
+import { WonAuctions } from "@/components/profile/won-auctions"
 import { Wishlist } from "@/components/profile/wishlist"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,7 +24,26 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({ user, userData, stats }: ProfileClientProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  
   const [activeTab, setActiveTab] = useState("profile")
+
+  // Sync activeTab with URL tab parameter on mount and parameter changes
+  useEffect(() => {
+    const validTabs = ["profile", "orders", "won-auctions", "addresses", "security", "wishlist"]
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam)
+    } else if (!tabParam) {
+      setActiveTab("profile")
+    }
+  }, [tabParam])
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    router.push(`/profile?tab=${tab}`, { scroll: false })
+  }
 
   const initials = userData?.name
     ? userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -70,6 +91,8 @@ export function ProfileClient({ user, userData, stats }: ProfileClientProps) {
         )
       case "orders":
         return <OrderHistory userId={user.id} />
+      case "won-auctions":
+        return <WonAuctions userId={user.id} />
       case "addresses":
         return <AddressList userId={user.id} />
       case "security":
@@ -100,7 +123,7 @@ export function ProfileClient({ user, userData, stats }: ProfileClientProps) {
       <ProfileSidebar 
         user={{ name: userData?.name, email: user.email }} 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={handleTabChange} 
       />
       
       <main className="flex-1 overflow-y-auto scrollbar-custom pl-64">

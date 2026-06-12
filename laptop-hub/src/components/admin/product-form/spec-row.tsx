@@ -52,7 +52,7 @@ export function SpecRow({
             options={def.options}
             value={specValue}
             onChange={onValueChange}
-            placeholder={`Select ${def.label}\u2026`}
+            placeholder={`Select ${def.label}...`}
             allowCustom
           />
         )}

@@ -21,7 +21,6 @@ let browserClient: any;
 
 /**
  * Standard Supabase Singleton
- * Matches patterns from SAMPLE projects.
  */
 export function createClient() {
   if (typeof window === 'undefined') {

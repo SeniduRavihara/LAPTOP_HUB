@@ -99,6 +99,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="font-semibold">Order ID / Ref</TableHead>
                             <TableHead className="font-semibold">Customer</TableHead>
+                            <TableHead className="font-semibold">Seller(s)</TableHead>
                             <TableHead className="font-semibold">Total</TableHead>
                             <TableHead className="font-semibold text-center">Status</TableHead>
                             <TableHead className="font-semibold">Payment</TableHead>
@@ -127,6 +128,18 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                                         <div className="flex flex-col">
                                             <span className="font-medium">{customerDisplay}</span>
                                             <span className="text-xs text-muted-foreground">{order.customer_email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col max-w-[150px] truncate gap-1">
+                                            {(Array.from(new Set(order.order_items?.map((item: any) => item.products?.seller?.name).filter(Boolean))) as string[]).map((sellerName: string, idx: number) => (
+                                                <span key={idx} className="font-semibold text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full w-fit">
+                                                    {sellerName}
+                                                </span>
+                                            ))}
+                                            {(!order.order_items || order.order_items.length === 0) && (
+                                                <span className="text-xs text-muted-foreground">N/A</span>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-semibold">LKR {order.total_amount.toLocaleString()}</TableCell>
@@ -167,7 +180,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         })}
                         {filteredOrders.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-32 text-muted-foreground italic">
+                                <TableCell colSpan={8} className="text-center h-32 text-muted-foreground italic">
                                     No orders found matching your filters.
                                 </TableCell>
                             </TableRow>

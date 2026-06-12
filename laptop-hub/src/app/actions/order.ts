@@ -171,3 +171,115 @@ export async function completePendingOrderAction(
     return { success: false, error: error.message };
   }
 }
+
+export async function updateOrderStatusAction(
+  orderId: string,
+  newStatus: 'confirmed' | 'processing' | 'shipped' | 'delivered',
+  notes?: string
+) {
+  try {
+    const supabase = await createClient();
+    
+    // Verify user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    // Verify user is the seller of the product in this order
+    const { data: orderItem, error: orderItemError } = await supabase
+      .from("order_items")
+      .select("product_id, products(seller_id)")
+      .eq("order_id", orderId)
+      .limit(1)
+      .single();
+
+    if (orderItemError || !orderItem) {
+      throw new Error("Order not found or could not verify seller");
+    }
+
+    // Supabase join may return products as object or array depending on schema config — handle both
+    const product: any = Array.isArray(orderItem.products)
+      ? (orderItem.products as any[])[0]
+      : (orderItem.products as any);
+
+    if (!product?.seller_id) {
+      throw new Error("Could not verify seller for this order");
+    }
+
+    if (product.seller_id !== user.id) {
+      throw new Error("Unauthorized: You are not the seller of this order");
+    }
+
+    // Update order status and optionally notes (e.g. tracking number)
+    const updateData: any = {
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes) {
+      updateData.notes = notes;
+    }
+
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update(updateData)
+      .eq("id", orderId);
+
+    if (updateError) throw updateError;
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update order status:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Called by the seller to confirm they have received COD cash payment
+ * upon delivery of the order.
+ */
+export async function markCodPaidAction(orderId: string) {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    // Verify this is a COD order and the caller is the seller
+    const { data: orderItem, error: orderItemError } = await supabase
+      .from("order_items")
+      .select("product_id, products(seller_id)")
+      .eq("order_id", orderId)
+      .limit(1)
+      .single();
+
+    if (orderItemError || !orderItem) {
+      throw new Error("Order not found");
+    }
+
+    const product: any = Array.isArray(orderItem.products)
+      ? (orderItem.products as any[])[0]
+      : (orderItem.products as any);
+
+    if (!product?.seller_id || product.seller_id !== user.id) {
+      throw new Error("Unauthorized: You are not the seller of this order");
+    }
+
+    // Mark payment as paid for COD orders
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", orderId)
+      .eq("payment_method", "cod");
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to mark COD as paid:", error);
+    return { success: false, error: error.message };
+  }
+}

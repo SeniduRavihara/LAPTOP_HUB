@@ -73,7 +73,7 @@ export function SpecTypePickerModal({
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search spec type\u2026"
+                placeholder="Search spec type..."
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               {search && (

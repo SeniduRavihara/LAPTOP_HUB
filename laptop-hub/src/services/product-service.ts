@@ -206,9 +206,7 @@ export class ProductService {
         }
     }
 
-    /**
-     * Create a new product listing
-     */
+ 
     static async createProduct(product: ProductInsert, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
@@ -226,9 +224,7 @@ export class ProductService {
         }
     }
 
-    /**
-     * Update an existing product
-     */
+
     static async updateProduct(id: string, updates: ProductUpdate, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
@@ -247,9 +243,7 @@ export class ProductService {
         }
     }
 
-    /**
-     * Permanent delete (Soft delete can be implemented similarly if needed)
-     */
+ 
     static async deleteProduct(id: string, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
