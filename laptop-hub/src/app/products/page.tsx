@@ -22,13 +22,15 @@ export default async function ProductsPage(props: {
   const brands = searchParams.brands ? (searchParams.brands as string).split(',') : undefined;
   const processors = searchParams.processors ? (searchParams.processors as string).split(',') : undefined;
   const rams = searchParams.rams ? (searchParams.rams as string).split(',') : undefined;
+  const storages = searchParams.storages ? (searchParams.storages as string).split(',') : undefined;
+  const gpus = searchParams.gpus ? (searchParams.gpus as string).split(',') : undefined;
   const minPrice = searchParams.minPrice as string | undefined;
   const maxPrice = searchParams.maxPrice as string | undefined;
   const sort = searchParams.sort as string | undefined;
 
   // Fetch data
   const products = await ProductService.searchProducts(
-    { query, brands, processors, rams, minPrice, maxPrice }, 
+    { query, brands, processors, rams, storages, gpus, minPrice, maxPrice }, 
     supabase
   ) as any[];
 

@@ -1,4 +1,5 @@
 import { supabase as browserClient } from "@/lib/supabase/client";
+import { SPEC_DEFINITIONS } from "@/components/admin/product-form/constants";
 
 export interface Product {
     id: string;
@@ -63,13 +64,29 @@ export class ProductService {
     static async searchProducts(filters: any, supabaseOverride?: any) {
         const supabase = supabaseOverride || browserClient;
         try {
+            // Expand simplified processor names (e.g. "Intel Core i5") to specific options (e.g. "Intel Core i5-13500H")
+            let expandedProcessors = (filters?.processors && filters.processors.length > 0) ? filters.processors : null;
+            if (expandedProcessors) {
+                const allProcessorOptions = SPEC_DEFINITIONS.processor?.options || [];
+                const matchedOptions = allProcessorOptions.filter(opt =>
+                    expandedProcessors.some((sel: string) => opt.toLowerCase().includes(sel.toLowerCase()))
+                );
+                if (matchedOptions.length > 0) {
+                    expandedProcessors = matchedOptions;
+                }
+            }
+
             // If a search query is provided, use the RPC function for hybrid search
             if (filters?.query) {
                 const { data, error } = await supabase.rpc('search_products', {
                     search_query: filters.query,
                     filter_brands: (filters.brands && filters.brands.length > 0) ? filters.brands : null,
                     min_price: filters.minPrice ? parseInt(filters.minPrice) : null,
-                    max_price: filters.maxPrice ? parseInt(filters.maxPrice) : null
+                    max_price: filters.maxPrice ? parseInt(filters.maxPrice) : null,
+                    filter_processors: expandedProcessors,
+                    filter_rams: (filters.rams && filters.rams.length > 0) ? filters.rams : null,
+                    filter_storages: (filters.storages && filters.storages.length > 0) ? filters.storages : null,
+                    filter_gpus: (filters.gpus && filters.gpus.length > 0) ? filters.gpus : null
                 });
 
                 if (error) throw error;
@@ -132,11 +149,21 @@ export class ProductService {
             if (filters?.maxPrice) {
                 query = query.lte('price', parseInt(filters.maxPrice));
             }
-            if (filters?.processors && filters.processors.length > 0) {
-                query = query.in('specs->>Processor', filters.processors);
+            if (expandedProcessors && expandedProcessors.length > 0) {
+                const formattedList = expandedProcessors.map((p: string) => `"${p}"`).join(',');
+                query = query.or(`specs->>processor.in.(${formattedList}),specs->>Processor.in.(${formattedList})`);
             }
             if (filters?.rams && filters.rams.length > 0) {
-                query = query.in('specs->>RAM', filters.rams);
+                const formattedList = filters.rams.map((r: string) => `"${r}"`).join(',');
+                query = query.or(`specs->>ram.in.(${formattedList}),specs->>RAM.in.(${formattedList})`);
+            }
+            if (filters?.storages && filters.storages.length > 0) {
+                const formattedList = filters.storages.map((s: string) => `"${s}"`).join(',');
+                query = query.or(`specs->>storage.in.(${formattedList}),specs->>Storage.in.(${formattedList})`);
+            }
+            if (filters?.gpus && filters.gpus.length > 0) {
+                const formattedList = filters.gpus.map((g: string) => `"${g}"`).join(',');
+                query = query.or(`specs->>gpu.in.(${formattedList}),specs->>GPU.in.(${formattedList})`);
             }
 
             const { data, error } = await query;

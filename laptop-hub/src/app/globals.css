@@ -153,28 +153,25 @@
     @apply bg-background text-foreground;
   }
 }
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.25) transparent;
+}
 
-@layer utilities {
-  .scrollbar-custom {
-    scrollbar-width: thin;
-    scrollbar-color: var(--muted-foreground) transparent;
-  }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
 
-  .scrollbar-custom::-webkit-scrollbar {
-    width: 6px;
-  }
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .scrollbar-custom::-webkit-scrollbar-track {
-    background: transparent;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.25);
+  border-radius: 9999px;
+}
 
-  .scrollbar-custom::-webkit-scrollbar-thumb {
-    background-color: var(--muted-foreground);
-    border-radius: 20px;
-    border: 3px solid transparent;
-  }
-
-  .scrollbar-custom:hover::-webkit-scrollbar-thumb {
-    background-color: var(--accent);
-  }
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.45);
 }
