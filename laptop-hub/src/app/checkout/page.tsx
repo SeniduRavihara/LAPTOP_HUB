@@ -140,7 +140,7 @@ function CheckoutPageContent() {
 
   const updateFormFromAddress = (address: Address) => {
     setFormData({
-      fullName: "", // User still needs to provide full name for the order if not in profile
+      fullName: address.full_name || "",
       email: user?.email || "",
       phone: address.phone || "",
       address: address.street_line_1 + (address.street_line_2 ? `, ${address.street_line_2}` : ""),
@@ -187,6 +187,7 @@ function CheckoutPageContent() {
     try {
       const addressData = {
         user_id: user.id,
+        full_name: formData.fullName,
         street_line_1: formData.address,
         city: formData.city,
         state: formData.city,
@@ -333,8 +334,13 @@ function CheckoutPageContent() {
                             <CheckCircle2 className="absolute top-3 right-3 w-4 h-4 text-primary" />
                           )}
                           <div className="text-sm font-semibold text-foreground mb-1">
-                            {address.city}, {address.state}
+                            {address.full_name || `${address.city}, ${address.state}`}
                           </div>
+                          {address.full_name && (
+                            <div className="text-xs text-muted-foreground mb-1">
+                              {address.city}, {address.state}
+                            </div>
+                          )}
                           <div className="text-xs text-muted-foreground line-clamp-1 mb-2">
                             {address.street_line_1}
                             {address.street_line_2 && `, ${address.street_line_2}`}

@@ -3,6 +3,7 @@ import { supabase as browserClient } from "@/lib/supabase/client";
 export interface Address {
   id: string;
   user_id: string;
+  full_name?: string;
   street_line_1: string;
   street_line_2?: string;
   city: string;

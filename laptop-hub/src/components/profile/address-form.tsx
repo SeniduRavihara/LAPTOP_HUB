@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Address, AddressService } from "@/services/address-service";
 
 const addressSchema = z.object({
+  full_name: z.string().optional(),
   street_line_1: z.string().min(1, "Address is required"),
   street_line_2: z.string().optional(),
   city: z.string().min(1, "City is required"),
@@ -42,6 +43,7 @@ export function AddressForm({ userId, initialData, onSuccess, onCancel }: Addres
   } = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
+      full_name: initialData?.full_name || "",
       street_line_1: initialData?.street_line_1 || "",
       street_line_2: initialData?.street_line_2 || "",
       city: initialData?.city || "",
@@ -82,6 +84,15 @@ export function AddressForm({ userId, initialData, onSuccess, onCancel }: Addres
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2 col-span-1 md:col-span-2">
+          <Label htmlFor="full_name">Full Name (Order Recipient)</Label>
+          <Input
+            id="full_name"
+            {...register("full_name")}
+            placeholder="John Doe"
+          />
+        </div>
+
         <div className="space-y-2 col-span-1 md:col-span-2">
           <Label htmlFor="street_line_1">Address Line 1</Label>
           <Input
