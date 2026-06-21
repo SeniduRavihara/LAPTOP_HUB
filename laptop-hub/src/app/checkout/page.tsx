@@ -626,7 +626,7 @@ function CheckoutPageContent() {
                   disabled={isProcessing || checkoutItems.length === 0}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base"
                 >
-                  {isProcessing ? "Redirecting to PayHere..." : "Proceed to Payment"}
+                  {isProcessing ? (paymentMethod === 'cod' ? "Placing Order..." : "Redirecting to PayHere...") : `Place Order (${paymentMethod === 'cod' ? 'COD' : 'Online'})`}
                 </Button>
 
                 {/* Hidden PayHere Form */}
