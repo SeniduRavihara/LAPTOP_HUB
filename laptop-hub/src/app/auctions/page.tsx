@@ -55,7 +55,7 @@ export default function AuctionsPage() {
             numberOfBids: (auction.bids || []).length,
             endTime: auction.end_time,
             condition: auction.products?.specs?.Condition || "New",
-            seller: "TechStore_Pro", 
+            seller: "Verified Seller",
             initialIsWatching: wishlistedProductIds.has(auction.product_id)
           };
         });

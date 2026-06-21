@@ -285,14 +285,8 @@ export function ProductDetailPage({ product, initialIsWishlisted = false }: Prod
             <h2 className="text-2xl font-bold text-foreground mb-4">
               About this product
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              {product.description}
-            </p>
             <p className="text-muted-foreground leading-relaxed">
-              The Dell XPS 13 Plus is designed for professionals who demand the
-              best. With its sleek design, powerful performance, and stunning
-              display, it&apos;s perfect for everyday computing, content
-              creation, and professional work.
+              {product.description}
             </p>
           </div>
 

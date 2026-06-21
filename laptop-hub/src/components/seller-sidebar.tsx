@@ -57,7 +57,7 @@ export function SellerSidebar() {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="font-bold text-sidebar-foreground text-sm truncate">TechStore_Pro</p>
+            <p className="font-bold text-sidebar-foreground text-sm truncate">{user?.user_metadata?.full_name || user?.user_metadata?.name || "Seller"}'s Store</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Verified Seller</p>
           </div>
         </div>
@@ -70,13 +70,14 @@ export function SellerSidebar() {
         </button>
       </div>
 
-      {!isCollapsed && (
+      {/* TODO: Uncomment when public store page is built */}
+      {/* {!isCollapsed && (
         <div className="px-4 py-2">
-          <Link href="/seller/store" className="text-[10px] text-sidebar-primary hover:underline font-bold uppercase tracking-tight">
+          <Link href={`/store/${user?.id}`} className="text-[10px] text-sidebar-primary hover:underline font-bold uppercase tracking-tight">
             View Public Store
           </Link>
         </div>
-      )}
+      )} */}
 
       <div className="flex-1 overflow-y-auto scrollbar-custom p-4">
 

@@ -26,6 +26,7 @@ export function Wishlist({ userId }: WishlistProps) {
               name,
               brand,
               price,
+              original_price,
               images,
               stock,
               auctions:auctions(
@@ -103,6 +104,7 @@ export function Wishlist({ userId }: WishlistProps) {
                 name={p.name}
                 brand={p.brand || ""}
                 price={p.price}
+                originalPrice={p.original_price}
                 image={p.images?.[0]}
                 rating={p.rating || 4.5}
                 reviews={Math.floor(Math.random() * 100) + 10} // Random for now

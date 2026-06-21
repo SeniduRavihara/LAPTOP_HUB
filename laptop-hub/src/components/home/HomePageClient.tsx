@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ProductCard } from '@/components/product-card'
 import { AuctionCard } from '@/components/auction-card'
 import { ProductFilters } from '@/components/product-filters'
+import { toast } from 'sonner'
 
 interface HomePageClientProps {
   products: any[];
@@ -200,7 +201,7 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
       {/* Advertisement Banner Section */}
       <section className="w-full bg-background pb-10 border-b border-border">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl">
+            <div className="relative overflow-hidden rounded-2xl bg-muted">
             {/* Banner Carousel */}
             <div
               className="flex transition-transform duration-500 ease-in-out"
@@ -208,22 +209,22 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
             >
               {/* Slide 1 */}
               <div className="min-w-full relative h-[300px] md:h-[400px]">
-                <img src="/slider/slide1.jpeg" alt="Banner 1" className="w-full h-full object-cover" />
+                <img src="/slider/slide1.jpeg" alt="Banner 1" className="w-full h-full object-contain" />
               </div>
 
               {/* Slide 2 */}
               <div className="min-w-full relative h-[300px] md:h-[400px]">
-                <img src="/slider/slide2.jpeg" alt="Banner 2" className="w-full h-full object-cover" />
+                <img src="/slider/slide2.jpeg" alt="Banner 2" className="w-full h-full object-contain" />
               </div>
 
               {/* Slide 3 */}
               <div className="min-w-full relative h-[300px] md:h-[400px]">
-                <img src="/slider/slide3.jpeg" alt="Banner 3" className="w-full h-full object-cover" />
+                <img src="/slider/slide3.jpeg" alt="Banner 3" className="w-full h-full object-contain" />
               </div>
 
               {/* Slide 4 */}
               <div className="min-w-full relative h-[300px] md:h-[400px]">
-                <img src="/slider/slide4.jpeg" alt="Banner 4" className="w-full h-full object-cover" />
+                <img src="/slider/slide4.jpeg" alt="Banner 4" className="w-full h-full object-contain" />
               </div>
             </div>
 
@@ -332,6 +333,7 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
                       name={product.name}
                       brand={product.brand}
                       price={product.price}
+                      originalPrice={product.original_price}
                       image={product.images?.[0]}
                       rating={4.5}
                       reviews={12}
@@ -366,20 +368,20 @@ export default function HomePageClient({ products = [], auctions = [], wishliste
             <p className="text-lg text-white/90 mb-6 max-w-lg">Have questions, need support, or want to partner with us? Reach out and our team will get back to you as soon as possible.</p>
             <div className="space-y-2 text-white/90">
               <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 01-8 0m8 0a4 4 0 00-8 0m8 0V8a4 4 0 00-8 0v4m8 0v4a4 4 0 01-8 0v-4" /></svg>
+                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
                 <span>info@laptophub.lk</span>
               </div>
               <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" /></svg>
+                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
                 <span>+94 77 123 4567</span>
               </div>
               <div className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5" /></svg>
+                <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
                 <span>123 Tech Avenue, Colombo 03</span>
               </div>
             </div>
           </div>
-          <form className="relative z-10 flex-1 flex flex-col items-center justify-center p-10 w-full md:w-auto" onSubmit={(e) => e.preventDefault()}>
+          <form className="relative z-10 flex-1 flex flex-col items-center justify-center p-10 w-full md:w-auto" onSubmit={(e) => { e.preventDefault(); toast.success("Thank you! We'll get back to you soon."); }}>
             <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md flex flex-col gap-4 border border-white/30">
               <input type="text" placeholder="Your Name" className="rounded-lg px-4 py-3 bg-white/5 text-white placeholder:text-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400" />
               <input type="email" placeholder="Your Email" className="rounded-lg px-4 py-3 bg-white/5 text-white placeholder:text-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-orange-400" />

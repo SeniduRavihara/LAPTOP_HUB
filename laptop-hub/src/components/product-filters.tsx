@@ -210,8 +210,9 @@ export function ProductFilters() {
             <input 
               type="range" 
               min="0" 
-              max="5000" 
-              value={maxPrice || '5000'}
+              max="500000" 
+              step="10000"
+              value={maxPrice || '500000'}
               onChange={(e) => setMaxPrice(e.target.value)}
               className="w-full accent-primary" 
             />
@@ -241,10 +242,10 @@ export function ProductFilters() {
       </div>
 
       <div className="p-4 border-t border-border mt-auto">
-        <Button onClick={handleApply} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium">
+        <Button onClick={handleApply} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium cursor-pointer active:scale-[0.98] transition-all">
           Apply Filters
         </Button>
-        <Button onClick={handleReset} variant="outline" className="w-full mt-2 border border-border bg-background text-foreground hover:bg-secondary rounded-lg h-9">
+        <Button onClick={handleReset} variant="outline" className="w-full mt-2 border border-border bg-background text-foreground hover:bg-secondary rounded-lg h-9 cursor-pointer active:scale-[0.98] transition-all">
           Reset
         </Button>
       </div>

@@ -18,8 +18,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search, X } from "lucide-react"
+import { Search, X, Ban } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { adminEndAuction } from "@/app/actions/auction"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface SellerAuctionsClientProps {
     initialAuctions: any[]
@@ -27,11 +30,33 @@ interface SellerAuctionsClientProps {
 }
 
 export function SellerAuctionsClient({ initialAuctions, orderPaymentStatusMap = {} }: SellerAuctionsClientProps) {
+    const [auctions, setAuctions] = useState(initialAuctions)
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [endingId, setEndingId] = useState<string | null>(null)
+    const router = useRouter()
+
+    const handleEndAuction = async (auctionId: string) => {
+        if (!confirm("Are you sure you want to end this auction? This will determine the winner and create an order.")) return
+        setEndingId(auctionId)
+        try {
+            const result = await adminEndAuction(auctionId)
+            if (result.success) {
+                toast.success("Auction ended successfully")
+                setAuctions(prev => prev.map(a => a.id === auctionId ? { ...a, status: 'completed' } : a))
+                router.refresh()
+            } else {
+                toast.error(result.error || "Failed to end auction")
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Something went wrong")
+        } finally {
+            setEndingId(null)
+        }
+    }
 
     const filteredAuctions = useMemo(() => {
-        return initialAuctions.filter((auction) => {
+        return auctions.filter((auction) => {
             const productName = (auction.products?.name || "").toLowerCase()
             const searchTerm = search.toLowerCase()
             
@@ -40,7 +65,7 @@ export function SellerAuctionsClient({ initialAuctions, orderPaymentStatusMap = 
 
             return matchesSearch && matchesStatus
         })
-    }, [initialAuctions, search, statusFilter])
+    }, [auctions, search, statusFilter])
 
     return (
         <div className="space-y-4">
@@ -129,9 +154,21 @@ export function SellerAuctionsClient({ initialAuctions, orderPaymentStatusMap = 
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <a href={`/seller/auctions/${auction.id}`}>View Details</a>
-                                        </Button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {auction.status === 'active' && (
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleEndAuction(auction.id)}
+                                                    disabled={endingId === auction.id}
+                                                >
+                                                    {endingId === auction.id ? "Ending..." : "End Auction"}
+                                                </Button>
+                                            )}
+                                            <Button variant="outline" size="sm" asChild>
+                                                <a href={`/seller/auctions/${auction.id}`}>View Details</a>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )

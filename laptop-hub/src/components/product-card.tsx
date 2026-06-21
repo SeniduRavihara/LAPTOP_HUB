@@ -13,6 +13,7 @@ interface ProductCardProps {
   name: string;
   brand: string;
   price: number;
+  originalPrice?: number | null;
   image: string;
   rating: number;
   reviews: number;
@@ -30,6 +31,7 @@ export function ProductCard({
   name,
   brand,
   price,
+  originalPrice,
   image,
   rating,
   reviews,
@@ -170,9 +172,11 @@ export function ProductCard({
                   <span className="text-lg font-bold text-foreground">
                     LKR {price.toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground line-through">
-                    LKR {(price * 1.15).toLocaleString()}
-                  </span>
+                  {originalPrice && originalPrice > price && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      LKR {originalPrice.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </>
             )}

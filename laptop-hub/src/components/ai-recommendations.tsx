@@ -152,6 +152,7 @@ export function AIRecommendations({ query }: AIRecommendationsProps) {
                   name={p.name}
                   brand={p.brand}
                   price={p.price}
+                  originalPrice={p.original_price}
                   image={p.product?.images?.[0] || "/placeholder.svg"}
                   rating={4.5}
                   reviews={15}
@@ -204,6 +205,7 @@ export function AIRecommendations({ query }: AIRecommendationsProps) {
                     name={p.name}
                     brand={p.brand}
                     price={p.price}
+                    originalPrice={p.original_price}
                     image={p.images?.[0]}
                     rating={4.5}
                     reviews={10}

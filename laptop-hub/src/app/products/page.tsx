@@ -156,6 +156,7 @@ export default async function ProductsPage(props: {
                       name={product.name}
                       brand={product.brand}
                       price={product.price}
+                      originalPrice={product.original_price}
                       image={product.images?.[0]}
                       rating={4.5} 
                       reviews={12}

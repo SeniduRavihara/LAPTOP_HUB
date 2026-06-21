@@ -106,6 +106,25 @@ export function ProductForm({ initialData }: Props) {
     if (!user) { toast.error("You must be logged in to upload images"); return }
     
     const currentImages = form.getValues("images")
+    
+    const fileNames = new Set(currentImages.map((url: string) => {
+      const parts = url.split('/')
+      return parts[parts.length - 1]
+    }))
+    
+    const uniqueFiles = Array.from(files).filter(file => {
+      if (fileNames.has(file.name)) {
+        toast.warning(`"${file.name}" is already uploaded, skipping duplicate`)
+        return false
+      }
+      return true
+    })
+    
+    if (uniqueFiles.length === 0) {
+      if (e.target) e.target.value = ""
+      return
+    }
+    
     const remainingSlots = 5 - currentImages.length
     
     if (remainingSlots <= 0) {
@@ -114,8 +133,8 @@ export function ProductForm({ initialData }: Props) {
       return
     }
     
-    const filesToUpload = Array.from(files).slice(0, remainingSlots)
-    if (files.length > remainingSlots) {
+    const filesToUpload = uniqueFiles.slice(0, remainingSlots)
+    if (uniqueFiles.length > remainingSlots) {
       toast.warning(`Only the first ${remainingSlots} image(s) will be uploaded to stay within the limit of 5.`)
     }
     
@@ -142,6 +161,15 @@ export function ProductForm({ initialData }: Props) {
 
   const removeImage = (url: string) =>
     form.setValue("images", form.getValues("images").filter((u) => u !== url))
+
+  const makeMainImage = (index: number) => {
+    const currentImages = form.getValues("images")
+    if (index === 0) return
+    const images = [...currentImages]
+    const [target] = images.splice(index, 1)
+    images.unshift(target)
+    form.setValue("images", images)
+  }
 
   const handleAddSpec = (key: string) => {
     form.setValue("specs", [...specs, { key, value: "" }])
@@ -275,7 +303,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem>
                 <FormLabel>Price (LKR)</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? 0} />
+                  <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? ""} onFocus={e => e.target.select()} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -304,7 +332,7 @@ export function ProductForm({ initialData }: Props) {
               <FormItem>
                 <FormLabel>Stock Quantity</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0" {...field} value={field.value ?? 0} />
+                  <Input type="number" placeholder="0" {...field} value={field.value ?? ""} onFocus={e => e.target.select()} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -400,10 +428,18 @@ export function ProductForm({ initialData }: Props) {
             {images.map((url, index) => (
               <div key={index} className="relative aspect-square border rounded-xl overflow-hidden bg-muted group">
                 <img src={url} alt="Product" className="object-cover w-full h-full" />
-                {index === 0 && (
+                {index === 0 ? (
                   <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] text-center py-0.5 font-medium">
                     MAIN
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => makeMainImage(index)}
+                    className="absolute bottom-0 left-0 right-0 bg-primary/80 text-primary-foreground text-[10px] text-center py-0.5 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Make Main
+                  </button>
                 )}
                 <button
                   type="button"
@@ -470,7 +506,7 @@ export function ProductForm({ initialData }: Props) {
                   <FormItem>
                     <FormLabel>Starting Bid (LKR)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? 0} />
+                      <Input type="number" placeholder="0.00" step="0.01" {...field} value={field.value ?? ""} onFocus={e => e.target.select()} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

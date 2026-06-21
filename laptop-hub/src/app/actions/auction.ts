@@ -170,6 +170,31 @@ export async function adminCancelAuction(id: string) {
   }
 }
 
+export async function adminEndAuction(id: string) {
+  try {
+    const user = await getRequestingUser()
+    if (!user) return { success: false, error: "Unauthorized" }
+
+    const isOwner = await checkAuctionOwnership(id, user.id, user.role || 'customer')
+    if (!isOwner) return { success: false, error: "Unauthorized auction ownership" }
+
+    const { AuctionService } = await import("@/services/auction-service")
+
+    const data = await AuctionService.closeAuction(id, supabaseAdmin)
+
+    revalidatePath("/admin/products")
+    revalidatePath("/admin/auctions")
+    revalidatePath("/seller/products")
+    revalidatePath("/seller/auctions")
+    revalidatePath(`/seller/auctions/${id}`)
+
+    return { success: true, data }
+  } catch (error: any) {
+    console.error("Unexpected Auction End Error:", error)
+    return { success: false, error: error.message }
+  }
+}
+
 export async function closeAuctionAction(id: string) {
   try {
     const user = await getRequestingUser()
