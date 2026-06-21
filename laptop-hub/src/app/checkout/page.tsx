@@ -40,6 +40,7 @@ function CheckoutPageContent() {
 
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [payHereParams, setPayHereParams] = useState<any>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -170,6 +171,47 @@ function CheckoutPageContent() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveAddress = async () => {
+    if (!user) {
+      alert("Please login to save an address");
+      return;
+    }
+    if (!formData.address || !formData.city || !formData.postalCode) {
+      alert("Please fill in address, city and postal code");
+      return;
+    }
+
+    setIsSavingAddress(true);
+    try {
+      const addressData = {
+        user_id: user.id,
+        street_line_1: formData.address,
+        city: formData.city,
+        state: formData.city,
+        postal_code: formData.postalCode,
+        country: "Sri Lanka",
+        phone: formData.phone,
+        is_default: addresses.length === 0,
+      };
+
+      if (selectedAddressId) {
+        const updatedAddress = await AddressService.updateAddress(selectedAddressId, addressData);
+        setAddresses(prev => prev.map(a => a.id === selectedAddressId ? updatedAddress : a));
+      } else {
+        const savedAddress = await AddressService.createAddress(addressData);
+        setAddresses(prev => [savedAddress, ...prev]);
+        setSelectedAddressId(savedAddress.id);
+      }
+      
+      setShowNewAddressForm(false);
+    } catch (error) {
+      console.error("Error saving address:", error);
+      alert("Failed to save address");
+    } finally {
+      setIsSavingAddress(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -405,6 +447,26 @@ function CheckoutPageContent() {
                         />
                       </div>
                     </div>
+                    
+                    {user && (
+                      <div className="flex justify-end">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={handleSaveAddress}
+                          disabled={isSavingAddress}
+                        >
+                          {isSavingAddress ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Address"
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 )}
 

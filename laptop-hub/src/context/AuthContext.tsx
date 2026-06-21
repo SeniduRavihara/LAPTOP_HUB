@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await AuthService.signOut()
+      localStorage.removeItem('laptop_hub_cart')
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)

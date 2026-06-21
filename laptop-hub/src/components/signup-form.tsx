@@ -14,7 +14,6 @@ import * as z from "zod";
 import { AuthService } from "@/services/auth-service";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
-import { useCart } from "@/context/CartContext";
 
 const signupSchema = z
   .object({
@@ -46,7 +45,6 @@ export function SignupForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const { user, role } = useAuth();
-  const { clearCart } = useCart();
 
   useEffect(() => {
     if (user) {
@@ -85,8 +83,6 @@ export function SignupForm() {
         name: formData.name,
         role: formData.role,
       });
-
-      clearCart();
 
       toast.success("Account created successfully!");
 

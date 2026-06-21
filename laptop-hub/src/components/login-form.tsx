@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import { AuthService } from "@/services/auth-service";
 import { ProfileService } from "@/services/profile-service";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
-import { useCart } from "@/context/CartContext";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -29,16 +28,23 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const { user, role } = useAuth();
-  const { clearCart } = useCart();
 
   useEffect(() => {
     if (user) {
-      if (role === "admin") router.push("/admin/dashboard");
-      else if (role === "seller") router.push("/seller/dashboard");
-      else router.push("/");
+      if (redirectTo) {
+        router.push(redirectTo);
+      } else if (role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (role === "seller") {
+        router.push("/seller/dashboard");
+      } else {
+        router.push("/");
+      }
     }
-  }, [user, role, router]);
+  }, [user, role, redirectTo, router]);
 
   const {
     register,
@@ -62,11 +68,11 @@ export function LoginForm() {
       if (user) {
         const profile: any = await ProfileService.getUserProfile(user.id);
 
-        clearCart();
-
         toast.success("Signed in successfully!");
 
-        if (profile?.role === "admin") {
+        if (redirectTo) {
+          router.push(redirectTo);
+        } else if (profile?.role === "admin") {
           router.push("/admin/dashboard");
         } else if (profile?.role === "seller") {
           router.push("/seller/dashboard");

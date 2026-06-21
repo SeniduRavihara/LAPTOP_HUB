@@ -16,10 +16,9 @@ export async function createOrderAction(
     const completeOrderData = {
       ...orderData,
       payment_method: paymentMethod,
-      // For COD, payment is pending until delivery, but order is "confirmed" 
-      // for the seller to start processing.
-      status: paymentMethod === 'cod' ? 'confirmed' : 'pending',
-      payment_status: 'pending'
+      // Since webhooks might not work on hosted setup without domain, mark online payments as paid immediately.
+      status: 'confirmed',
+      payment_status: paymentMethod === 'cod' ? 'pending' : 'paid'
     };
 
     // 1. Create the order in the database
