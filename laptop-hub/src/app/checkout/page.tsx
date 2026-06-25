@@ -217,6 +217,14 @@ function CheckoutPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPayHereParams(null);
+
+    // Guard: must be logged in before submitting
+    if (!user) {
+      alert("Please sign in to complete your order.");
+      return;
+    }
+
     setIsProcessing(true);
 
     try {

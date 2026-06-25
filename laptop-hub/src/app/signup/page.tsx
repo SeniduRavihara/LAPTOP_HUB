@@ -28,12 +28,12 @@ export default async function SignupPage() {
           className="absolute inset-0 h-full w-full object-cover opacity-90"
         />
         <div className="relative z-20 flex h-full flex-col justify-between p-10 text-white">
-          <div className="flex items-center gap-2 font-medium text-lg">
+          <a href="/" className="flex items-center gap-2 font-medium text-lg hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
               <span className="font-bold">L</span>
             </div>
             LaptopHub
-          </div>
+          </a>
           <div className="space-y-2">
             <blockquote className="space-y-2">
               <p className="text-lg">

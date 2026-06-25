@@ -11,7 +11,11 @@ export async function createOrderAction(
 ) {
   try {
     const supabase = await createClient();
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Please sign in to complete your order." };
+    }
+
     // Add payment method to order data
     const completeOrderData = {
       ...orderData,
@@ -20,6 +24,26 @@ export async function createOrderAction(
       status: 'confirmed',
       payment_status: paymentMethod === 'cod' ? 'pending' : 'paid'
     };
+
+    // Validate all cart product IDs exist in the database
+    const productIds = cartItems.map((item: any) => item.id);
+    const { data: existingProducts, error: productCheckError } = await supabase
+      .from("products")
+      .select("id")
+      .in("id", productIds);
+
+    if (productCheckError) throw new Error("Failed to validate cart items.");
+
+    const existingIds = new Set((existingProducts || []).map((p: any) => p.id));
+    const invalidItems = cartItems.filter((item: any) => !existingIds.has(item.id));
+
+    if (invalidItems.length > 0) {
+      const names = invalidItems.map((i: any) => i.name || i.id).join(", ");
+      return {
+        success: false,
+        error: `Some items in your cart are no longer available: ${names}. Please remove them and try again.`,
+      };
+    }
 
     // 1. Create the order in the database
     const order = await OrderService.createOrder(completeOrderData, cartItems, supabase);
@@ -90,7 +114,11 @@ export async function completePendingOrderAction(
 ) {
   try {
     const supabase = await createClient();
-    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Please sign in to complete your order." };
+    }
+
     // Fetch the order to verify and get payment reference
     const { data: order, error: fetchError } = await supabase
       .from("orders")
