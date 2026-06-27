@@ -11,11 +11,16 @@ export default async function ProductsPage() {
 
   const { data: allProducts, error } = await supabase
     .from("products")
-    .select("*, auction:auctions(status)")
+    .select("*, auction:auctions(status), seller:users!products_seller_id_fkey(name)")
     .order("created_at", { ascending: false })
 
   if (error) {
-    console.error("[ProductsPage] Error fetching data:", error)
+    console.error("[ProductsPage] Error fetching data:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
   }
 
   return (

@@ -162,6 +162,7 @@ export function ProductsClient({ initialProducts, adminId }: ProductsClientProps
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="font-semibold">Name</TableHead>
                             <TableHead className="font-semibold">Brand</TableHead>
+                            <TableHead className="font-semibold">Seller</TableHead>
                             <TableHead className="font-semibold">Type</TableHead>
                             <TableHead className="font-semibold">Price</TableHead>
                             <TableHead className="font-semibold">Stock</TableHead>
@@ -173,6 +174,11 @@ export function ProductsClient({ initialProducts, adminId }: ProductsClientProps
                             <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell>{product.brand}</TableCell>
+                                <TableCell>
+                                    <span className="inline-block font-semibold text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full w-fit whitespace-nowrap">
+                                        {product.seller?.name || "Unknown"}
+                                    </span>
+                                </TableCell>
                                 <TableCell>
                                     {product.auction && (Array.isArray(product.auction) ? product.auction.some((a: any) => a.status === 'active') : product.auction.status === 'active') ? (
                                         <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 border-none">Auction</Badge>
