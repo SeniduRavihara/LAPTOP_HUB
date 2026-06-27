@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { wishlistService } from "@/services/wishlist-service";
 import { toast } from "sonner";
 
@@ -44,9 +45,24 @@ export function ProductCard({
   initialIsWishlisted = false,
 }: ProductCardProps) {
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
   const [isLoading, setIsLoading] = useState(false);
   const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart({
+      id,
+      name,
+      price,
+      quantity: 1,
+      image: imgSrc,
+      brand,
+    });
+    toast.success(`${name} added to cart`);
+  };
 
   useEffect(() => {
     setIsWishlisted(initialIsWishlisted);
@@ -184,10 +200,11 @@ export function ProductCard({
 
           {/* Action Button */}
           <Button
+            onClick={isAuction ? undefined : handleAddToCart}
             disabled={stock === 0 && !isAuction}
             className={`w-full rounded-lg h-9 font-medium transition-all duration-300 ${
-              isAuction 
-                ? "bg-orange-600 hover:bg-orange-700 text-white" 
+              isAuction
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground"
             }`}
           >

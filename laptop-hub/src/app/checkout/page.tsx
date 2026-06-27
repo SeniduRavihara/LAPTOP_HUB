@@ -15,7 +15,7 @@ import { Address, AddressService } from "@/services/address-service";
 import { supabase } from "@/lib/supabase/client";
 
 function CheckoutPageContent() {
-  const { cartItems, cartTotal } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,6 +24,7 @@ function CheckoutPageContent() {
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const [pendingOrderItems, setPendingOrderItems] = useState<any[]>([]);
   const [isOrderLoading, setIsOrderLoading] = useState(!!orderId);
+  const [isCheckoutSuccessful, setIsCheckoutSuccessful] = useState(false);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -103,10 +104,11 @@ function CheckoutPageContent() {
   }, [orderId, user, router]);
 
   useEffect(() => {
-    if (!orderId && cartItems.length === 0) {
+    // If checkout was successful, don't redirect to cart even if it's empty
+    if (!isCheckoutSuccessful && !orderId && cartItems.length === 0) {
       router.push("/cart");
     }
-  }, [cartItems, router, orderId]);
+  }, [cartItems, router, orderId, isCheckoutSuccessful]);
 
   // Fetch addresses
   useEffect(() => {
@@ -155,12 +157,12 @@ function CheckoutPageContent() {
     updateFormFromAddress(address);
   };
 
-  // Auto-submit form when params are ready
+  // Block navigation if checkout was successful
   useEffect(() => {
-    if (payHereParams && formRef.current) {
-      formRef.current.submit();
+    if (isCheckoutSuccessful) {
+        // Just let it be, the redirect should happen in handleSubmit
     }
-  }, [payHereParams]);
+  }, [isCheckoutSuccessful]);
 
   const checkoutItems = orderId ? pendingOrderItems : cartItems;
   const subtotal = orderId ? (pendingOrder?.total_amount || 0) : cartTotal;
@@ -244,6 +246,8 @@ function CheckoutPageContent() {
         const result = await completePendingOrderAction(orderId, shippingData, paymentMethod);
 
         if (result.success) {
+          setIsCheckoutSuccessful(true);
+          clearCart(); // Clear the cart on successful order
           if (result.paymentMethod === 'cod') {
             router.push(result.redirectUrl as string);
           } else if (result.params) {
@@ -270,6 +274,8 @@ function CheckoutPageContent() {
         const result = await createOrderAction(orderData, cartItems, paymentMethod);
 
         if (result.success) {
+          setIsCheckoutSuccessful(true);
+          clearCart(); // Clear the cart on successful order
           if (result.paymentMethod === 'cod') {
             router.push(result.redirectUrl as string);
           } else if (result.params) {

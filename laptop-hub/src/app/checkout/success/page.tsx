@@ -5,11 +5,25 @@ import { CheckCircle2, ShoppingBag, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { OrderService } from "@/services/order-service";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function CheckoutSuccessPage(props: { searchParams: Promise<{ order_id?: string | string[] }> }) {
   const searchParams = await props.searchParams;
   const rawOrderId = searchParams.order_id;
   const orderId = Array.isArray(rawOrderId) ? rawOrderId[0] : (rawOrderId || "Unknown");
+
+  let order = null;
+  if (orderId !== "Unknown") {
+    const supabase = await createClient();
+    try {
+        order = await OrderService.getOrderById(orderId, supabase);
+    } catch (error) {
+        console.error("Failed to fetch order:", error);
+    }
+  }
+
+  const isCod = order?.payment_method === 'cod';
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -20,10 +34,14 @@ export default async function CheckoutSuccessPage(props: { searchParams: Promise
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
-            
-            <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
+
+            <h1 className="text-3xl font-bold mb-2">
+                {isCod ? "Order placed successfully!" : "Payment Successful!"}
+            </h1>
             <p className="text-muted-foreground mb-6 text-lg">
-              Thank you for your order. Your payment has been received.
+              {isCod
+                ? "Thank you for your order. We will process your order soon."
+                : "Thank you for your order. Your payment has been received."}
             </p>
 
             <div className="bg-secondary/30 rounded-lg p-4 w-full mb-8 border border-border/50">
@@ -38,7 +56,7 @@ export default async function CheckoutSuccessPage(props: { searchParams: Promise
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full">
-              <Link href="/profile" className="flex-1">
+              <Link href="/profile?tab=orders" className="flex-1">
                 <Button className="w-full" size="lg">
                   <ShoppingBag className="w-4 h-4 mr-2" />
                   View My Orders
