@@ -1,7 +1,12 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { OrdersClient } from "./orders-client"
+import { AuthService } from "@/services/auth-service"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function OrdersPage() {
+  const supabase = await createClient()
+  const user = await AuthService.getUser(supabase);
+
   // Fetch all orders with items and products using admin client to bypass RLS
   const { data: orders, error: ordersError } = await supabaseAdmin
     .from("orders")
@@ -53,7 +58,7 @@ export default async function OrdersPage() {
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
       </div>
 
-      <OrdersClient initialOrders={enrichedOrders} />
+      <OrdersClient initialOrders={enrichedOrders} adminId={user?.id} />
     </div>
   )
 }

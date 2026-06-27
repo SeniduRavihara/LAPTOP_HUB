@@ -26,12 +26,14 @@ import { OrderDetailsDialog } from "@/components/order-details-dialog"
 
 interface OrdersClientProps {
     initialOrders: any[]
+    adminId?: string
 }
 
-export function OrdersClient({ initialOrders }: OrdersClientProps) {
+export function OrdersClient({ initialOrders, adminId }: OrdersClientProps) {
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
     const [paymentMethodFilter, setPaymentMethodFilter] = useState("all")
+    const [onlyMyOrders, setOnlyMyOrders] = useState(!!adminId)
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
 
     const filteredOrders = useMemo(() => {
@@ -48,9 +50,12 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
             const matchesStatus = statusFilter === "all" || order.status === statusFilter
             const matchesPaymentMethod = paymentMethodFilter === "all" || order.payment_method === paymentMethodFilter
 
-            return matchesSearch && matchesStatus && matchesPaymentMethod
+            const isMyOrder = adminId && order.order_items?.some((item: any) => item.products?.seller_id === adminId)
+            const matchesMyOrders = !onlyMyOrders || isMyOrder
+
+            return matchesSearch && matchesStatus && matchesPaymentMethod && matchesMyOrders
         })
-    }, [initialOrders, search, statusFilter, paymentMethodFilter])
+    }, [initialOrders, search, statusFilter, paymentMethodFilter, onlyMyOrders, adminId])
 
     return (
         <div className="space-y-4">
@@ -91,13 +96,24 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     </SelectContent>
                 </Select>
 
-                {(search || statusFilter !== "all" || paymentMethodFilter !== "all") && (
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={onlyMyOrders}
+                        onChange={(e) => setOnlyMyOrders(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    Show only my orders
+                </label>
+
+                {(search || statusFilter !== "all" || paymentMethodFilter !== "all" || onlyMyOrders !== !!adminId) && (
                     <Button
                         variant="ghost"
                         onClick={() => {
                             setSearch("")
                             setStatusFilter("all")
                             setPaymentMethodFilter("all")
+                            setOnlyMyOrders(!!adminId)
                         }}
                         className="h-10 px-2 lg:px-3"
                     >

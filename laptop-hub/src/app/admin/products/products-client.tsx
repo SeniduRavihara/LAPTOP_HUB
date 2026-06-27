@@ -36,12 +36,14 @@ import {
 
 interface ProductsClientProps {
     initialProducts: any[]
+    adminId?: string
 }
 
-export function ProductsClient({ initialProducts }: ProductsClientProps) {
+export function ProductsClient({ initialProducts, adminId }: ProductsClientProps) {
     const [products, setProducts] = useState(initialProducts)
     const [search, setSearch] = useState("")
     const [typeFilter, setTypeFilter] = useState("all")
+    const [onlyMyProducts, setOnlyMyProducts] = useState(!!adminId)
     const [productToDelete, setProductToDelete] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const { toast } = useToast()
@@ -86,7 +88,7 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
             const brand = (product.brand || "").toLowerCase()
             const searchTerm = search.toLowerCase()
             const matchesSearch = name.includes(searchTerm) || brand.includes(searchTerm)
-            
+
             const isAuction = product.auction && (
                 Array.isArray(product.auction)
                     ? product.auction.some((a: any) => a.status === 'active')
@@ -96,9 +98,12 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
             if (typeFilter === "auction") matchesType = isAuction
             if (typeFilter === "standard") matchesType = !isAuction
 
-            return matchesSearch && matchesType
+            const isMyProduct = adminId && product.seller_id === adminId
+            const matchesMyProducts = !onlyMyProducts || isMyProduct
+
+            return matchesSearch && matchesType && matchesMyProducts
         })
-    }, [products, search, typeFilter])
+    }, [products, search, typeFilter, onlyMyProducts, adminId])
 
 
     return (
@@ -125,12 +130,23 @@ export function ProductsClient({ initialProducts }: ProductsClientProps) {
                     </SelectContent>
                 </Select>
 
-                {(search || typeFilter !== "all") && (
+                <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={onlyMyProducts}
+                        onChange={(e) => setOnlyMyProducts(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    Show only my products
+                </label>
+
+                {(search || typeFilter !== "all" || onlyMyProducts !== !!adminId) && (
                     <Button
                         variant="ghost"
                         onClick={() => {
                             setSearch("")
                             setTypeFilter("all")
+                            setOnlyMyProducts(!!adminId)
                         }}
                         className="h-10 px-2 lg:px-3"
                     >

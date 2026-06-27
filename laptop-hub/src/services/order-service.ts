@@ -37,7 +37,7 @@ export class OrderService {
         try {
             let query = supabase
                 .from("order_items")
-                .select("*, products!inner(*), orders!inner(*)")
+                .select("*, products(*), orders(*)")
                 .eq("products.seller_id", sellerId)
                 .order("created_at", { ascending: false });
 
@@ -54,8 +54,13 @@ export class OrderService {
 
             if (error) throw error;
             return data;
-        } catch (error) {
-            console.error('OrderService.getSellerOrderItems error:', error);
+        } catch (error: any) {
+            console.error('OrderService.getSellerOrderItems error details:', {
+                message: error?.message,
+                code: error?.code,
+                details: error?.details,
+                hint: error?.hint,
+            });
             throw error;
         }
     }

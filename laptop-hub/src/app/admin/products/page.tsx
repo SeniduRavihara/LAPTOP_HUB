@@ -3,9 +3,11 @@ import { createClient } from "@/lib/supabase/server"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { ProductsClient } from "./products-client"
+import { AuthService } from "@/services/auth-service"
 
 export default async function ProductsPage() {
   const supabase = await createClient()
+  const user = await AuthService.getUser(supabase);
 
   const { data: allProducts, error } = await supabase
     .from("products")
@@ -28,7 +30,7 @@ export default async function ProductsPage() {
         </Button>
       </div>
 
-      <ProductsClient initialProducts={allProducts || []} />
+      <ProductsClient initialProducts={allProducts || []} adminId={user?.id} />
     </div>
   )
 }
