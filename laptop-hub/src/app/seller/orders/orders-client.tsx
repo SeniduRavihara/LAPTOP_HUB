@@ -29,6 +29,7 @@ interface SellerOrdersClientProps {
 export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProps) {
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState("all")
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
 
     const filteredItems = useMemo(() => {
@@ -36,13 +37,14 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
             const productName = (item.products?.name || "").toLowerCase()
             const reference = (item.orders?.payment_reference || "").toLowerCase()
             const searchTerm = search.toLowerCase()
-            
+
             const matchesSearch = productName.includes(searchTerm) || reference.includes(searchTerm)
             const matchesStatus = statusFilter === "all" || item.orders?.status === statusFilter
+            const matchesPaymentMethod = paymentMethodFilter === "all" || item.orders?.payment_method === paymentMethodFilter
 
-            return matchesSearch && matchesStatus
+            return matchesSearch && matchesStatus && matchesPaymentMethod
         })
-    }, [initialOrderItems, search, statusFilter])
+    }, [initialOrderItems, search, statusFilter, paymentMethodFilter])
 
     return (
         <div className="space-y-4">
@@ -72,12 +74,24 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                     </SelectContent>
                 </Select>
 
-                {(search || statusFilter !== "all") && (
+                <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Payment Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Payments</SelectItem>
+                        <SelectItem value="online">Online (PayHere)</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {(search || statusFilter !== "all" || paymentMethodFilter !== "all") && (
                     <Button
                         variant="ghost"
                         onClick={() => {
                             setSearch("")
                             setStatusFilter("all")
+                            setPaymentMethodFilter("all")
                         }}
                         className="h-10 px-2 lg:px-3"
                     >
@@ -129,11 +143,16 @@ export function SellerOrdersClient({ initialOrderItems }: SellerOrdersClientProp
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={order.payment_status === 'paid' ? 'default' : 'outline'} className={
-                                            order.payment_status === 'paid' ? 'bg-blue-500 hover:bg-blue-600' : ''
-                                        }>
-                                            {order.payment_status}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={order.payment_status === 'paid' ? 'default' : 'outline'} className={
+                                                order.payment_status === 'paid' ? 'bg-blue-500 hover:bg-blue-600' : ''
+                                            }>
+                                                {order.payment_status}
+                                            </Badge>
+                                            <Badge variant="outline" className={`capitalize ${order.payment_method === 'cod' ? 'border-orange-500 text-orange-600 bg-orange-500/10' : 'border-blue-500 text-blue-600 bg-blue-500/10'}`}>
+                                                {order.payment_method === 'cod' ? 'COD' : 'Online'}
+                                            </Badge>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formattedDate}</TableCell>
                                     <TableCell className="text-right">

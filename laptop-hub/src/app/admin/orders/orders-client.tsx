@@ -31,6 +31,7 @@ interface OrdersClientProps {
 export function OrdersClient({ initialOrders }: OrdersClientProps) {
     const [search, setSearch] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState("all")
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
 
     const filteredOrders = useMemo(() => {
@@ -39,16 +40,17 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
             const customerEmail = (order.customer_email || "").toLowerCase()
             const reference = (order.payment_reference || "").toLowerCase()
             const searchTerm = search.toLowerCase()
-            
-            const matchesSearch = customerName.includes(searchTerm) || 
-                                 customerEmail.includes(searchTerm) || 
-                                 reference.includes(searchTerm)
-            
-            const matchesStatus = statusFilter === "all" || order.status === statusFilter
 
-            return matchesSearch && matchesStatus
+            const matchesSearch = customerName.includes(searchTerm) ||
+                                 customerEmail.includes(searchTerm) ||
+                                 reference.includes(searchTerm)
+
+            const matchesStatus = statusFilter === "all" || order.status === statusFilter
+            const matchesPaymentMethod = paymentMethodFilter === "all" || order.payment_method === paymentMethodFilter
+
+            return matchesSearch && matchesStatus && matchesPaymentMethod
         })
-    }, [initialOrders, search, statusFilter])
+    }, [initialOrders, search, statusFilter, paymentMethodFilter])
 
     return (
         <div className="space-y-4">
@@ -78,12 +80,24 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     </SelectContent>
                 </Select>
 
-                {(search || statusFilter !== "all") && (
+                <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Payment Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Payments</SelectItem>
+                        <SelectItem value="online">Online (PayHere)</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {(search || statusFilter !== "all" || paymentMethodFilter !== "all") && (
                     <Button
                         variant="ghost"
                         onClick={() => {
                             setSearch("")
                             setStatusFilter("all")
+                            setPaymentMethodFilter("all")
                         }}
                         className="h-10 px-2 lg:px-3"
                     >
@@ -155,10 +169,13 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                                             }`}>
                                                 {order.payment_status}
                                             </Badge>
+                                            <Badge variant="outline" className={`capitalize ${order.payment_method === 'cod' ? 'border-orange-500 text-orange-600 bg-orange-500/10' : 'border-blue-500 text-blue-600 bg-blue-500/10'}`}>
+                                                {order.payment_method === 'cod' ? 'COD' : 'Online'}
+                                            </Badge>
                                             {!(order.payment_status === 'paid') && (
-                                                <VerifyPaymentButton 
-                                                    paymentReference={order.payment_reference} 
-                                                    isPaid={false} 
+                                                <VerifyPaymentButton
+                                                    paymentReference={order.payment_reference}
+                                                    isPaid={false}
                                                 />
                                             )}
                                         </div>
