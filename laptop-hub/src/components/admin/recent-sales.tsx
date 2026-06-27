@@ -41,7 +41,12 @@ export function RecentSales({ orders = [] }: RecentSalesProps) {
               {order.customer_email || ""}
             </p>
           </div>
-          <div className="ml-auto font-medium">
+          <div className="ml-auto font-medium flex items-center gap-2">
+            {order.payment_method === 'cod' && (
+                <span className="text-[10px] bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded font-bold uppercase">
+                    COD
+                </span>
+            )}
             +LKR {order.total_amount.toLocaleString()}
           </div>
         </div>

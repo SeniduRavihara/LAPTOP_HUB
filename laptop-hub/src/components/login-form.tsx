@@ -49,6 +49,7 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -191,6 +192,42 @@ export function LoginForm() {
           className="border border-border bg-secondary hover:bg-secondary/80 text-foreground rounded-lg transition-colors"
         >
           Facebook
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setValue("email", "admin123@gmail.com");
+            setValue("password", "Admin@123");
+          }}
+          className="text-xs"
+        >
+          Admin
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setValue("email", "seller123@gmail.com");
+            setValue("password", "Seller@123");
+          }}
+          className="text-xs"
+        >
+          Seller
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setValue("email", "customer123@gmail.com");
+            setValue("password", "Customer@123");
+          }}
+          className="text-xs"
+        >
+          Customer
         </Button>
       </div>
 

@@ -12,6 +12,7 @@ export interface RecentOrder {
   total_amount: number;
   status: string;
   created_at: string;
+  payment_method: 'online' | 'cod';
 }
 
 export class DashboardService {
@@ -206,7 +207,7 @@ export class DashboardService {
       const { data: items } = await supabase
         .from("order_items")
         .select(
-          "total_price, orders!inner(id, customer_name, customer_email, total_amount, status, created_at)"
+          "total_price, orders!inner(id, customer_name, customer_email, total_amount, status, created_at, payment_method)"
         )
         .in("product_id", productIds)
         .order("created_at", { ascending: false })
@@ -223,6 +224,7 @@ export class DashboardService {
             total_amount: Number(item.total_price),
             status: order.status,
             created_at: order.created_at,
+            payment_method: order.payment_method,
           });
         } else {
           const existing = orderMap.get(order.id)!;
@@ -283,7 +285,7 @@ export class DashboardService {
     try {
       const { data: orders, error } = await supabase
         .from("orders")
-        .select("id, customer_name, customer_email, total_amount, status, created_at")
+        .select("id, customer_name, customer_email, total_amount, status, created_at, payment_method")
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -295,6 +297,7 @@ export class DashboardService {
         total_amount: Number(order.total_amount),
         status: order.status,
         created_at: order.created_at,
+        payment_method: order.payment_method,
       }));
     } catch (error) {
       console.error("DashboardService.getAdminRecentOrders error:", error);
