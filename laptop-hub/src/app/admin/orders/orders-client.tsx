@@ -188,7 +188,7 @@ export function OrdersClient({ initialOrders, adminId }: OrdersClientProps) {
                                             <Badge variant="outline" className={`capitalize ${order.payment_method === 'cod' ? 'border-orange-500 text-orange-600 bg-orange-500/10' : 'border-blue-500 text-blue-600 bg-blue-500/10'}`}>
                                                 {order.payment_method === 'cod' ? 'COD' : 'Online'}
                                             </Badge>
-                                            {!(order.payment_status === 'paid') && (
+                                            {!(order.payment_status === 'paid') && order.payment_method !== 'cod' && (
                                                 <VerifyPaymentButton
                                                     paymentReference={order.payment_reference}
                                                     isPaid={false}
