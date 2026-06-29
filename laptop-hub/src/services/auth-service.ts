@@ -1,5 +1,5 @@
-import { withTimeout } from "@/lib/utils/timeout";
 import { getURL } from "@/lib/utils/url";
+import { supabase as browserClient } from "@/lib/supabase/client";
 
 /**
  * AuthService
@@ -10,118 +10,164 @@ export class AuthService {
     /**
      * Standard sign in with email and password
      */
-    static async signIn(supabase: any, email: string, password: string) {
-        return withTimeout(
-            () => supabase.auth.signInWithPassword({
+    static async signIn(email: string, password: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
-            }).then(({ data, error }: any) => {
-                if (error) throw error;
-                return data;
-            }),
-            60000,
-            "Sign-in timed out. Please try again."
-        );
+            });
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuthService.signIn error:', error);
+            throw error;
+        }
     }
 
     /**
      * OAuth sign in with Google
      */
-    static async signInWithGoogle(supabase: any) {
-        return withTimeout(
-            () => supabase.auth.signInWithOAuth({
+    static async signInWithGoogle(supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: `${getURL()}/auth/callback`,
                 },
-            }).then(({ data, error }: any) => {
-                if (error) throw error;
-                return data;
-            }),
-            20000,
-            "Google sign-in timed out."
-        );
+            });
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuthService.signInWithGoogle error:', error);
+            throw error;
+        }
     }
 
     /**
      * Standard sign up with email, password, and optional metadata
      */
-    static async signUp(supabase: any, email: string, password: string, metadata?: any) {
-        return withTimeout(
-            () => supabase.auth.signUp({
+    static async signUp(email: string, password: string, metadata?: any, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: metadata ? { data: metadata } : undefined,
-            }).then(({ data, error }: any) => {
-                if (error) throw error;
-                return data;
-            }),
-            60000,
-            "Sign-up timed out. Please check your connection."
-        );
+            });
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuthService.signUp error:', error);
+            throw error;
+        }
     }
 
     /**
      * Signs out the current user
      */
-    static async signOut(supabase: any) {
-        return withTimeout(
-            () => supabase.auth.signOut().then(({ error }: any) => {
-                if (error) throw error;
-            }),
-            15000,
-            "Sign-out timed out."
-        );
+    static async signOut(supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+        } catch (error) {
+            console.error('AuthService.signOut error:', error);
+            throw error;
+        }
     }
 
     /**
      * Fetches the current active session
      */
-    static async getSession(supabase: any) {
-        return withTimeout(
-            () => supabase.auth.getSession().then(({ data: { session }, error }: any) => {
-                if (error) throw error;
-                return session;
-            }),
-            20000,
-            "Session fetch timed out."
-        );
+    static async getSession(supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            return session;
+        } catch (error) {
+            // Log but don't swallow if it's a critical error
+            if (error instanceof Error) {
+                console.error('AuthService.getSession error:', error.message);
+            }
+            return null;
+        }
     }
 
     /**
      * Sets up a listener for auth state changes
      * Returns an unsubscribe function
      */
-    static onAuthStateChange(supabase: any, callback: (event: any, session: any) => void) {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
-        return subscription;
+    static onAuthStateChange(callback: (event: string, session: any) => void, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+            callback(event, session);
+        });
+
+        return {
+            unsubscribe: () => subscription.unsubscribe(),
+        };
     }
 
     /**
-     * Fetches the current user details
+     * Exchange a code for a session (OAuth callback)
      */
-    static async getUser(supabase: any) {
-        return withTimeout(
-            () => supabase.auth.getUser().then(({ data: { user }, error }: any) => {
-                if (error) throw error;
-                return user;
-            }),
-            20000,
-            "User fetch timed out."
-        );
+    static async exchangeCodeForSession(code: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('AuthService.exchangeCodeForSession error:', error);
+            throw error;
+        }
     }
 
     /**
-     * Exchanges an auth code for a session
+     * Fetches the current user profile from the session
      */
-    static async exchangeCodeForSession(supabase: any, code: string) {
-        return withTimeout(
-            () => supabase.auth.exchangeCodeForSession(code).then(({ data, error }: any) => {
-                if (error) throw error;
-                return data;
-            }),
-            20000,
-            "Auth code exchange timed out."
-        );
+    static async getUser(supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) throw error;
+            return user;
+        } catch (error) {
+            console.error('AuthService.getUser error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Sends a password reset email to the given address
+     */
+    static async resetPasswordForEmail(email: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${getURL()}/reset-password`,
+            });
+            if (error) throw error;
+        } catch (error) {
+            console.error('AuthService.resetPasswordForEmail error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Updates the authenticated user's password (called after reset link click)
+     */
+    static async updatePassword(newPassword: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) throw error;
+        } catch (error) {
+            console.error('AuthService.updatePassword error:', error);
+            throw error;
+        }
     }
 }

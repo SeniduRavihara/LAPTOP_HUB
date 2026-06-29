@@ -3,18 +3,29 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, cartTotal } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const subtotal = cartTotal;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
   const shipping = subtotal > 50000 || cartItems.length === 0 ? 0 : 2500; // Example LKR values
   const total = subtotal + tax + shipping;
+
+  const handleCheckout = () => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent("/cart")}`);
+    } else {
+      router.push("/checkout");
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -89,8 +100,8 @@ export function CartPage() {
                   LKR {total.toLocaleString()}
                 </span>
               </div>
-              <Button 
-                onClick={() => router.push("/checkout")}
+              <Button
+                onClick={handleCheckout}
                 disabled={cartItems.length === 0}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-base"
               >

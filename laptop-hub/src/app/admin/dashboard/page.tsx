@@ -1,8 +1,6 @@
-"use client"
-
 import { Overview } from "@/components/admin/overview"
 import { RecentSales } from "@/components/admin/recent-sales"
-import { Button } from "@/components/ui/button"
+import { DownloadButton } from "@/components/admin/download-button"
 import {
     Card,
     CardContent,
@@ -10,38 +8,32 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs"
+import { DashboardService } from "@/services/dashboard-service"
+import { createClient } from "@/lib/supabase/server"
 
-export default function DashboardPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const stats = await DashboardService.getOverviewStats(supabase)
+  const monthlyRevenue = await DashboardService.getAdminMonthlyRevenue(supabase)
+  const recentOrders = await DashboardService.getAdminRecentOrders(5, supabase)
+
   return (
     <div className="flex-1 space-y-4 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
           {/* <CalendarDateRangePicker /> */}
-          <Button>Download</Button>
+          <DownloadButton 
+            stats={stats} 
+            monthlyRevenue={monthlyRevenue} 
+            recentOrders={recentOrders} 
+          />
         </div>
       </div>
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="analytics" disabled>
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="reports" disabled>
-            Reports
-          </TabsTrigger>
-          <TabsTrigger value="notifications" disabled>
-            Notifications
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -61,16 +53,16 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$45,231.89</div>
+                <div className="text-2xl font-bold">LKR {stats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  Lifetime revenue
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Subscriptions
+                  Active Auctions
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -88,15 +80,15 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+2350</div>
+                <div className="text-2xl font-bold">+{stats.activeAuctions}</div>
                 <p className="text-xs text-muted-foreground">
-                  +180.1% from last month
+                  Currently running
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sales</CardTitle>
+                <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -112,16 +104,16 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+12,234</div>
+                <div className="text-2xl font-bold">{stats.pendingOrders}</div>
                 <p className="text-xs text-muted-foreground">
-                  +19% from last month
+                  Requires fulfillment
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Active Now
+                  Total Users
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -137,9 +129,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">{stats.totalUsers}</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last hour
+                  Registered accounts
                 </p>
               </CardContent>
             </Card>
@@ -150,23 +142,24 @@ export default function DashboardPage() {
                 <CardTitle>Overview</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <Overview />
+                <Overview data={monthlyRevenue} />
               </CardContent>
             </Card>
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Recent Sales</CardTitle>
                 <CardDescription>
-                  You made 265 sales this month.
+                  {recentOrders.length > 0
+                    ? `There are ${recentOrders.length} recent order${recentOrders.length > 1 ? "s" : ""}.`
+                    : "No recent orders yet."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <RecentSales orders={recentOrders} />
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </div>
   )
 }

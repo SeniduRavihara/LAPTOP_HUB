@@ -1,7 +1,23 @@
 import { AuthHeader } from "@/components/auth-header";
 import { SignupForm } from "@/components/signup-form";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
+    if (profile?.role === 'admin') {
+      redirect("/admin/dashboard");
+    } else if (profile?.role === 'seller') {
+      redirect("/seller/dashboard");
+    } else {
+      redirect("/");
+    }
+  }
+
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       <div className="hidden lg:block relative h-full w-full">
@@ -12,12 +28,12 @@ export default function SignupPage() {
           className="absolute inset-0 h-full w-full object-cover opacity-90"
         />
         <div className="relative z-20 flex h-full flex-col justify-between p-10 text-white">
-          <div className="flex items-center gap-2 font-medium text-lg">
+          <a href="/" className="flex items-center gap-2 font-medium text-lg hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-white/10 backdrop-blur rounded-lg flex items-center justify-center">
               <span className="font-bold">L</span>
             </div>
             LaptopHub
-          </div>
+          </a>
           <div className="space-y-2">
             <blockquote className="space-y-2">
               <p className="text-lg">

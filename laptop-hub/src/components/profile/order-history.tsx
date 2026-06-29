@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import {
     Table,
@@ -7,19 +10,46 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { createClient } from "@/lib/supabase/server"
-
-import { AuthService } from "@/services/auth-service"
+import { supabase } from "@/lib/supabase/client"
 import { OrderService } from "@/services/order-service"
+import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { OrderTrackingDialog } from "./order-tracking-dialog"
+import Link from "next/link"
 
-export async function OrderHistory() {
-  const supabase = await createClient()
-  const user = (await AuthService.getUser(supabase)) as any
+interface OrderHistoryProps {
+  userId: string
+}
 
-  if (!user || !user.id) return null
-  
-  const ordersResponse = await OrderService.getUserOrders(supabase, user.id)
-  const orders = (ordersResponse || []) as any[]
+export function OrderHistory({ userId }: OrderHistoryProps) {
+  const [loading, setLoading] = useState(true)
+  const [orders, setOrders] = useState<any[]>([])
+  const [trackingOrder, setTrackingOrder] = useState<any>(null)
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const ordersResponse = await OrderService.getUserOrders(userId, supabase)
+        setOrders(ordersResponse || [])
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (userId) {
+      fetchOrders()
+    }
+  }, [userId])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -31,8 +61,10 @@ export async function OrderHistory() {
               <TableHead>Order ID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Payment Method</TableHead>
               <TableHead>Total Amount</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -50,12 +82,37 @@ export async function OrderHistory() {
                     {order.payment_status}
                   </Badge>
                 </TableCell>
-                <TableCell>${order.total_amount}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={order.payment_method === 'cod' ? 'border-orange-500 text-orange-600 bg-orange-500/10' : 'border-blue-500 text-blue-600 bg-blue-500/10'}>
+                    {order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-semibold">LKR {Number(order.total_amount).toLocaleString()}</TableCell>
+                <TableCell className="text-right">
+                  {order.status === 'pending' && order.payment_status === 'pending' ? (
+                    <Link href={`/checkout?orderId=${order.id}`}>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8">
+                        Complete Payment
+                      </Button>
+                    </Link>
+                  ) : order.payment_status === 'paid' && !['delivered', 'cancelled', 'refunded'].includes(order.status) ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setTrackingOrder(order)}
+                      className="text-xs h-8 text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      Track Order
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
             {orders?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
+                <TableCell colSpan={7} className="text-center h-24">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -63,6 +120,12 @@ export async function OrderHistory() {
           </TableBody>
         </Table>
       </div>
+      
+      <OrderTrackingDialog 
+        isOpen={!!trackingOrder}
+        onClose={() => setTrackingOrder(null)}
+        order={trackingOrder}
+      />
     </div>
   )
 }

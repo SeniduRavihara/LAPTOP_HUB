@@ -1,25 +1,56 @@
-import { Badge } from "@/components/ui/badge"
-import { OrderStatusSelect } from "@/components/admin/order-status-select"
-import { VerifyPaymentButton } from "@/components/admin/verify-payment-button"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { supabaseAdmin } from "@/lib/supabase/admin"
+import { OrdersClient } from "./orders-client"
+import { AuthService } from "@/services/auth-service"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function OrdersPage() {
   const supabase = await createClient()
+  const user = await AuthService.getUser(supabase);
 
-  // Fetch orders
-  // Note: RLS might hide orders if not admin-enabled correctly.
-  const { data: orders } = await supabase
+  // Fetch all orders with items and products using admin client to bypass RLS
+  const { data: orders, error: ordersError } = await supabaseAdmin
     .from("orders")
-    .select("*")
+    .select("*, order_items(*, products(*))")
     .order("created_at", { ascending: false })
+
+  if (ordersError) {
+    console.error("[OrdersPage] Error fetching orders:", ordersError)
+  }
+
+  // Fetch all seller & admin profiles to enrich product details using admin client to bypass RLS
+  const { data: sellers, error: sellersError } = await supabaseAdmin
+    .from("users")
+    .select("id, name, role")
+    .in("role", ["seller", "admin"])
+
+  if (sellersError) {
+    console.error("[OrdersPage] Error fetching sellers:", sellersError)
+  }
+
+  const sellerMap = new Map(sellers?.map(s => [
+    s.id, 
+    { 
+      name: s.role === "admin" ? `${s.name} (Admin)` : s.name
+    }
+  ]) || [])
+
+  // Map each order's items to include their seller info
+  const enrichedOrders = orders?.map(order => {
+    const enrichedItems = order.order_items?.map((item: any) => {
+      const seller = item.products ? sellerMap.get(item.products.seller_id) : null;
+      return {
+        ...item,
+        products: item.products ? {
+          ...item.products,
+          seller: seller || { name: "Unknown Seller", email: "N/A" }
+        } : null
+      }
+    });
+    return {
+      ...order,
+      order_items: enrichedItems
+    }
+  }) || [];
 
   return (
     <div className="space-y-4">
@@ -27,68 +58,7 @@ export default async function OrdersPage() {
         <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
       </div>
 
-      <div className="rounded-md border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders?.map((order) => {
-              const customerDisplay = order.customer_name || order.customer_email || order.customer_id
-              const formattedDate = new Date(order.created_at).toLocaleDateString()
-
-              return (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-primary">{order.payment_reference}</span>
-                      <span className="text-[10px] text-muted-foreground opacity-50">{order.id.slice(0, 8)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{customerDisplay}</span>
-                      <span className="text-xs text-muted-foreground">{order.customer_email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>${order.total_amount}</TableCell>
-                  <TableCell>
-                    <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'} className="capitalize min-w-[70px] justify-center">
-                        {order.payment_status}
-                      </Badge>
-                      {! (order.payment_status === 'paid') && (
-                        <VerifyPaymentButton 
-                          paymentReference={order.payment_reference} 
-                          isPaid={false} 
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{formattedDate}</TableCell>
-                </TableRow>
-              )
-            })}
-             {orders?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center h-24"> {/* Updated colSpan from 5 to 6 */}
-                  No orders found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <OrdersClient initialOrders={enrichedOrders} adminId={user?.id} />
     </div>
   )
 }

@@ -8,10 +8,18 @@ import { createClient } from "@/lib/supabase/client";
 import { Clock, Eye, Gavel, Loader2, MapPin } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuctionService } from "@/services/auction-service";
 import { useAuth } from "@/context/AuthContext";
+
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+
+import { useCountdown } from "@/hooks/use-countdown";
+
+import { wishlistService } from "@/services/wishlist-service";
 
 export default function AuctionDetailPage() {
   const params = useParams();
@@ -22,22 +30,57 @@ export default function AuctionDetailPage() {
   const [isBidding, setIsBidding] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [isWatching, setIsWatching] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [winnerOrderId, setWinnerOrderId] = useState<string | null>(null);
   
   const supabase = createClient();
+  const timeLeft = useCountdown(auction?.end_time);
+
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchAuction() {
       setIsLoading(true);
       try {
-        const data: any = await AuctionService.getAuctionById(supabase, id);
+        const data: any = await AuctionService.getAuctionById(id, supabase);
         
         const maxBid = data.bids.reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
-        setAuction({
+        const processedAuction = {
           ...data,
           currentBid: maxBid || data.starting_bid,
           totalBids: data.bids.length,
           specs: Object.entries(data.products.specs || {}).map(([label, value]) => ({ label, value: String(value) })),
-        });
+        };
+        setAuction(processedAuction);
+        
+        if (user) {
+          const inWishlist = await wishlistService.isInWishlist(data.product_id, user.id);
+          setIsWatching(inWishlist);
+
+          // Check if the user is the winner of this auction if it is completed
+          if (processedAuction.status === 'completed' && data.bids.length > 0) {
+            const highestBid = data.bids.reduce((prev: any, current: any) => (prev.amount > current.amount) ? prev : current, { amount: 0 });
+            if (highestBid.bidder_id === user.id) {
+              const { data: orderItem } = await supabase
+                .from("order_items")
+                .select("order_id, orders!inner(customer_id, status, payment_reference)")
+                .eq("product_id", data.product_id)
+                .eq("orders.customer_id", user.id)
+                .eq("orders.status", "pending")
+                .like("orders.payment_reference", "ORD-AUC-%")
+                .maybeSingle();
+
+              if (orderItem) {
+                setWinnerOrderId((orderItem as any).order_id);
+              }
+            }
+          }
+        }
+
+        // Set initial active image
+        if (data.products.images?.length > 0) {
+          setActiveImage(data.products.images[0]);
+        }
       } catch (error) {
         console.error("Error fetching auction:", error);
         toast.error("Failed to load auction details");
@@ -60,14 +103,24 @@ export default function AuctionDetailPage() {
           filter: `auction_id=eq.${id}`
         },
         (payload: any) => {
+          const newBid = payload.new;
+          
           setAuction((prev: any) => {
             if (!prev) return prev;
-            const newBid = payload.new;
+            
+            // Check if current user is outbid
+            const userHasBid = prev.bids?.some((b: any) => b.bidder_id === user?.id);
+            if (userHasBid && newBid.bidder_id !== user?.id) {
+              toast.warning(`You've been outbid! Current bid is now LKR ${newBid.amount}`);
+            }
+
             return {
               ...prev,
               currentBid: Math.max(prev.currentBid, newBid.amount),
               totalBids: prev.totalBids + 1,
-              bids: [...(prev.bids || []), newBid]
+              bids: prev.bids?.some((b: any) => b.id === newBid.id) 
+                ? prev.bids 
+                : [...(prev.bids || []), newBid]
             };
           });
         }
@@ -77,7 +130,7 @@ export default function AuctionDetailPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const handleBid = async () => {
     if (!bidAmount) return;
@@ -94,7 +147,19 @@ export default function AuctionDetailPage() {
         return;
       }
 
-      await AuctionService.placeBid(supabase, id, user.id, amount);
+      const newBid = await AuctionService.placeBid(id, user.id, amount, supabase);
+      
+      // Update local state immediately
+      setAuction((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          currentBid: Math.max(prev.currentBid, newBid.amount),
+          totalBids: (prev.totalBids || 0) + 1,
+          bids: [newBid, ...(prev.bids || [])].sort((a, b) => b.amount - a.amount)
+        };
+      });
+
       toast.success("Bid placed successfully!");
       setBidAmount("");
     } catch (error: any) {
@@ -107,22 +172,32 @@ export default function AuctionDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (!auction) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-muted-foreground">Auction not found</p>
-      </div>
+      <>
+        <Navbar />
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <p className="text-xl text-muted-foreground">Auction not found</p>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
@@ -146,19 +221,24 @@ export default function AuctionDetailPage() {
             <div className="bg-secondary border border-border rounded-lg overflow-hidden mb-4">
               <div className="relative w-full h-96">
                 <Image
-                  src={auction.products.images?.[0] || "/placeholder.svg"}
+                  src={activeImage || auction.products.images?.[0] || "/placeholder.svg"}
                   alt={auction.products.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 66vw"
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2 mb-8">
-              {(auction.products.images || []).map((image: string, idx: number) => (
+              {(auction.products.images || [])
+                .filter((img: string) => img && img.trim() !== "" && img !== "undefined")
+                .map((image: string, idx: number) => (
                 <div
                   key={idx}
-                  className="relative w-full h-20 rounded-lg overflow-hidden border border-border"
+                  onClick={() => setActiveImage(image)}
+                  className={`relative w-full h-20 rounded-lg overflow-hidden border cursor-pointer transition-all ${
+                    activeImage === image ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
+                  }`}
                 >
                   <Image
                     src={image || "/placeholder.svg"}
@@ -227,8 +307,12 @@ export default function AuctionDetailPage() {
                     Time Remaining
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-red-600">
-                  {new Date(auction.end_time).toLocaleTimeString()} {/* We can add a countdown hook later */}
+                <p className="text-3xl font-bold text-red-600 font-mono tracking-tight">
+                  {timeLeft.isExpired ? (
+                    "Auction Ended"
+                  ) : (
+                    `${timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}${timeLeft.hours.toString().padStart(2, "0")}h : ${timeLeft.minutes.toString().padStart(2, "0")}m : ${timeLeft.seconds.toString().padStart(2, "0")}s`
+                  )}
                 </p>
               </div>
 
@@ -238,7 +322,7 @@ export default function AuctionDetailPage() {
                   Current Bid
                 </p>
                 <p className="text-4xl font-bold text-primary mb-2">
-                  ${auction.currentBid}
+                  LKR {auction.currentBid.toLocaleString()}
                 </p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -253,87 +337,114 @@ export default function AuctionDetailPage() {
               </div>
 
               {/* Bid Input */}
-              <div className="mb-6">
-                <label className="text-sm font-medium text-foreground mb-2 block">
-                  Your Bid (minimum ${auction.currentBid + 100} {/* Using 100 as default increment */}
-                  )
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    placeholder={`$${
-                      auction.currentBid + 100
-                    }`}
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleBid}
-                    disabled={isBidding}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {isBidding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Place Bid"}
-                  </Button>
+              {auction.status === 'completed' ? (
+                <div className="mb-6 p-4 rounded-lg bg-muted border border-border space-y-4">
+                  {winnerOrderId ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5 animate-pulse">
+                        🎉 Congratulations! You won this auction!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Your winning bid was <strong className="text-foreground">LKR {auction.currentBid.toLocaleString()}</strong>. Please complete your checkout to claim your laptop.
+                      </p>
+                      <Link href={`/checkout?orderId=${winnerOrderId}`} className="block w-full">
+                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+                          Complete Checkout & Pay
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : user && auction.bids?.length > 0 && auction.bids.reduce((prev: any, current: any) => (prev.amount > current.amount) ? prev : current, { amount: 0, bidder_id: "" }).bidder_id === user.id ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-green-600">
+                        🎉 You won this auction!
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Order has been successfully placed / checkout completed.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        Auction Closed
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        This auction has ended. The winning bid was <strong className="text-foreground">LKR {auction.currentBid.toLocaleString()}</strong>.
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Minimum increment: $100
-                </p>
-              </div>
+              ) : (
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Your Bid (minimum LKR {(auction.currentBid + 1000).toLocaleString()} {/* Using 1000 as default increment */}
+                    )
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        LKR
+                      </span>
+                      <Input
+                        type="number"
+                        placeholder={(auction.currentBid + 1000).toString()}
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        className="pl-12"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleBid}
+                      disabled={isBidding}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {isBidding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Place Bid"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Minimum increment: LKR 1,000
+                  </p>
+                </div>
+              )}
 
               {/* Watch Button */}
               <Button
-                onClick={() => setIsWatching(!isWatching)}
+                onClick={async () => {
+                  if (!user) {
+                    toast.error("Please login to watch this auction");
+                    return;
+                  }
+                  try {
+                    setIsWishlistLoading(true);
+                    if (isWatching) {
+                      await wishlistService.removeFromWishlist(auction.product_id, user.id);
+                      setIsWatching(false);
+                      toast.success("Removed from watch list");
+                    } else {
+                      await wishlistService.addToWishlist(auction.product_id, user.id);
+                      setIsWatching(true);
+                      toast.success("Added to watch list");
+                    }
+                  } catch (error) {
+                    console.error("Watch toggle error:", error);
+                    toast.error("Failed to update watch list");
+                  } finally {
+                    setIsWishlistLoading(false);
+                  }
+                }}
+                disabled={isWishlistLoading}
                 variant="outline"
-                className="w-full mb-6"
+                className={`w-full mb-6 ${isWatching ? "bg-accent text-accent-foreground border-accent" : ""}`}
               >
                 {isWatching ? "✓ Watching" : "+ Watch This Auction"}
               </Button>
 
-              {/* Seller Info */}
-              <div className="border-t border-border pt-6">
-                <h3 className="font-bold text-foreground mb-4">
-                  Seller Information
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Seller</p>
-                    <p className="font-semibold text-foreground">
-                      TechStore_Pro
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < 4
-                            ? "text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    ))}
-                    <span className="text-sm text-muted-foreground ml-1">
-                      4.8 (342 sales)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    New York, NY
-                  </div>
-                  <Button variant="outline" className="w-full mt-4">
-                    View Seller Profile
-                  </Button>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

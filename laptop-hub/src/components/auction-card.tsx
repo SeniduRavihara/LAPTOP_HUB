@@ -3,10 +3,14 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { wishlistService } from "@/services/wishlist-service";
+import { toast } from "sonner";
 
 interface AuctionCardProps {
   id: string;
+  productId: string;
   name: string;
   brand: string;
   image: string;
@@ -15,10 +19,12 @@ interface AuctionCardProps {
   endTime: string;
   rating: number;
   seller: string;
+  initialIsWatching?: boolean;
 }
 
 export function AuctionCard({
   id,
+  productId,
   name,
   brand,
   image,
@@ -27,11 +33,45 @@ export function AuctionCard({
   endTime,
   rating,
   seller,
+  initialIsWatching = false,
 }: AuctionCardProps) {
-  const [isWatching, setIsWatching] = useState(false);
+  const { user } = useAuth();
+  const [isWatching, setIsWatching] = useState(initialIsWatching);
+  const [isLoading, setIsLoading] = useState(false);
   const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
   const timeLeft = new Date(endTime).toLocaleDateString(); // Simple placeholder
+
+  // Sync state if prop changes
+  useEffect(() => {
+    setIsWatching(initialIsWatching);
+  }, [initialIsWatching]);
   
+  const handleWatchToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      if (isWatching) {
+        await wishlistService.removeFromWishlist(productId, user.id);
+        setIsWatching(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistService.addToWishlist(productId, user.id);
+        setIsWatching(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Link href={`/auctions/${id}`}>
       <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col">
@@ -95,23 +135,20 @@ export function AuctionCard({
           {/* Buttons */}
           <div className="flex gap-2 pt-2">
             <Button
-              onClick={(e) => e.preventDefault()}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg h-9 font-medium transition-colors text-sm"
             >
               Place Bid
             </Button>
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                setIsWatching(!isWatching);
-              }}
-              className={`flex-1 rounded-lg h-9 font-medium transition-colors border text-sm ${
+              onClick={handleWatchToggle}
+              disabled={isLoading}
+              className={`flex-1 rounded-lg h-9 font-medium transition-colors border text-sm flex items-center justify-center gap-1 ${
                 isWatching
                   ? "bg-accent text-accent-foreground border-accent"
                   : "border-border bg-secondary hover:bg-secondary/80 text-foreground"
-              }`}
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {isWatching ? "★" : "☆"} Watch
+              {isWatching ? "★" : "☆"} {isWatching ? "Watching" : "Watch"}
             </button>
           </div>
         </div>

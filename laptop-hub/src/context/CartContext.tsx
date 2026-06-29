@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { useAuth } from "./AuthContext";
 
 interface CartItem {
   id: string | number;
@@ -25,6 +26,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
+  const prevUserId = useRef<string | undefined>(undefined);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -37,6 +40,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, []);
+
+  // Clear cart when user changes (different user logged in)
+  useEffect(() => {
+    if (prevUserId.current !== undefined && prevUserId.current !== user?.id) {
+      setCartItems([]);
+      localStorage.removeItem("laptop_hub_cart");
+    }
+    prevUserId.current = user?.id;
+  }, [user?.id]);
 
   // Save cart to localStorage on change
   useEffect(() => {

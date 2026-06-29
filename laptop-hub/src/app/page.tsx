@@ -1,162 +1,43 @@
-import { ProductCard } from "@/components/product-card";
-import { AuctionCard } from "@/components/auction-card";
-import { ProductFilters } from "@/components/product-filters";
+export const dynamic = "force-dynamic";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import Image from "next/image";
-import Link from "next/link";
 import { ProductService } from "@/services/product-service";
 import { AuctionService } from "@/services/auction-service";
+import HomePageClient from "@/components/home/HomePageClient";
 
-export default async function HomePage() {
+export default async function HomePage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient();
+  // We can still await searchParams if needed by future logic
+  const searchParams = props.searchParams ? await props.searchParams : {};
 
-  const products: any[] = (await ProductService.getRecentProducts(supabase, 8)) as any[];
-  const auctions: any[] = (await AuctionService.getActiveAuctions(supabase, 4)) as any[];
+  const products = (await ProductService.getRecentProducts(8, supabase)) as any[];
+  const auctions: any[] = (await AuctionService.getActiveAuctions(4, supabase)) as any[];
+
+  // Fetch user wishlist if logged in
+  const { data: { user } } = await supabase.auth.getUser();
+  let wishlistedProductIds: string[] = [];
+  
+  if (user) {
+    const { data: wishlistData } = await supabase
+      .from("wishlists")
+      .select("product_id")
+      .eq("user_id", user.id);
+      
+    if (wishlistData) {
+      wishlistedProductIds = wishlistData.map(item => item.product_id);
+    }
+  }
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Premium Laptops at Unbeatable Prices
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6">
-                Discover the latest laptops from top brands. Compare, bid, and
-                buy with confidence.
-              </p>
-              <div className="flex gap-4">
-                <Link
-                  href="/auctions"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Explore Auctions
-                </Link>
-                <Link
-                  href="#products"
-                  className="border border-primary text-primary hover:bg-primary/5 px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Browse Now
-                </Link>
-              </div>
-            </div>
-            <div className="flex-1 hidden md:flex justify-end">
-              <div className="w-full max-w-md h-64 bg-secondary rounded-lg flex items-center justify-center relative overflow-hidden group">
-                <Image 
-                  src="/laptop-hero.png" 
-                  alt="Premium Laptops" 
-                  fill 
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/10"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Auctions Section */}
-      {auctions && auctions.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground">Featured Auctions</h2>
-              <p className="text-muted-foreground">Ending soon! Don't miss out on these deals.</p>
-            </div>
-            <Link href="/auctions" className="text-primary hover:underline font-semibold flex items-center gap-1 group">
-              View All Auctions
-              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {auctions.map((auction: any) => {
-              const product = auction.products;
-              const currentBid = auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid;
-              
-              return (
-                <AuctionCard 
-                  key={auction.id}
-                  id={auction.id}
-                  name={product.name}
-                  brand={product.brand}
-                  image={product.images?.[0]}
-                  currentBid={currentBid}
-                  numberOfBids={auction.bids?.length || 0}
-                  endTime={auction.end_time}
-                  rating={4.8}
-                  seller="Verified Seller"
-                />
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Products Section */}
-      <section
-        id="products"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-      >
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar Filters */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <ProductFilters />
-          </aside>
-
-            <div className="flex-1">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">
-                    Recently Added
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Discover our latest inventory
-                  </p>
-                </div>
-                <Link href="/products" className="text-primary hover:underline text-sm font-medium">
-                  View All
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products?.map((product: any) => {
-                  const auction = Array.isArray(product.auctions) ? product.auctions[0] : product.auctions;
-                  const isAuction = auction && auction.status === 'active';
-                  const currentBid = isAuction 
-                    ? (auction.bids?.reduce((max: number, b: any) => Math.max(max, b.amount), 0) || auction.starting_bid)
-                    : null;
-
-                  return (
-                    <ProductCard 
-                      key={product.id} 
-                      id={product.id}
-                      name={product.name}
-                      brand={product.brand}
-                      price={product.price}
-                      image={product.images?.[0]}
-                      rating={4.5} // Mock for now as requested
-                      reviews={12} // Mock for now
-                      stock={product.stock}
-                      badge={product.badge}
-                      isAuction={isAuction}
-                      currentBid={currentBid}
-                      endTime={isAuction ? auction.end_time : null}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-        </div>
-      </section>
-
+        <HomePageClient products={products} auctions={auctions} wishlistedProductIds={wishlistedProductIds} />
+      </main>
       <Footer />
-    </main>
     </>
   );
 }

@@ -3,21 +3,28 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
+import { wishlistService } from "@/services/wishlist-service";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   id: string;
   name: string;
   brand: string;
   price: number;
+  originalPrice?: number | null;
   image: string;
   rating: number;
   reviews: number;
   stock: number;
   badge?: string;
   isAuction?: boolean;
+  auctionId?: string | null;
   currentBid?: number | null;
   endTime?: string | null;
+  initialIsWishlisted?: boolean;
 }
 
 export function ProductCard({
@@ -25,20 +32,70 @@ export function ProductCard({
   name,
   brand,
   price,
+  originalPrice,
   image,
   rating,
   reviews,
   stock,
   badge,
   isAuction,
+  auctionId,
   currentBid,
   endTime,
+  initialIsWishlisted = false,
 }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { user } = useAuth();
+  const { addToCart } = useCart();
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+  const [isLoading, setIsLoading] = useState(false);
   const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg");
 
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart({
+      id,
+      name,
+      price,
+      quantity: 1,
+      image: imgSrc,
+      brand,
+    });
+    toast.success(`${name} added to cart`);
+  };
+
+  useEffect(() => {
+    setIsWishlisted(initialIsWishlisted);
+  }, [initialIsWishlisted]);
+
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(id, user.id);
+        setIsWishlisted(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistService.addToWishlist(id, user.id);
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Link href={isAuction ? `/auctions/${id}` : `/products/${id}`}>
+    <Link href={isAuction && auctionId ? `/auctions/${auctionId}` : `/products/${id}`}>
       <div className="bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300 group cursor-pointer h-full flex flex-col">
         {/* Image Container */}
         <div className="relative w-full h-48 bg-secondary overflow-hidden">
@@ -63,17 +120,15 @@ export function ProductCard({
               {badge}
             </div>
           )}
-          {stock === 0 && (
+          {stock === 0 && !isAuction && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-white font-semibold">Out of Stock</span>
             </div>
           )}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsWishlisted(!isWishlisted);
-            }}
-            className="absolute top-3 left-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors"
+            onClick={handleWishlistToggle}
+            disabled={isLoading}
+            className={`absolute top-3 left-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <svg
               className={`w-5 h-5 ${
@@ -133,9 +188,11 @@ export function ProductCard({
                   <span className="text-lg font-bold text-foreground">
                     LKR {price.toLocaleString()}
                   </span>
-                  <span className="text-xs text-muted-foreground line-through">
-                    LKR {(price * 1.15).toLocaleString()}
-                  </span>
+                  {originalPrice && originalPrice > price && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      LKR {originalPrice.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -143,11 +200,11 @@ export function ProductCard({
 
           {/* Action Button */}
           <Button
-            onClick={(e) => e.preventDefault()}
+            onClick={isAuction ? undefined : handleAddToCart}
             disabled={stock === 0 && !isAuction}
             className={`w-full rounded-lg h-9 font-medium transition-all duration-300 ${
-              isAuction 
-                ? "bg-orange-600 hover:bg-orange-700 text-white" 
+              isAuction
+                ? "bg-orange-600 hover:bg-orange-700 text-white"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground"
             }`}
           >

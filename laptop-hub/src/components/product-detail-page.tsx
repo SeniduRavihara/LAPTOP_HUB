@@ -3,20 +3,31 @@
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { wishlistService } from "@/services/wishlist-service";
+
+import { ReviewSection } from "@/components/reviews/review-section";
 
 interface ProductDetailPageProps {
   product: any;
+  initialIsWishlisted?: boolean;
 }
 
-export function ProductDetailPage({ product }: ProductDetailPageProps) {
+export function ProductDetailPage({ product, initialIsWishlisted = false }: ProductDetailPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const { addToCart, clearCart } = useCart();
   const router = useRouter();
+
+  useEffect(() => {
+    setIsWishlisted(initialIsWishlisted);
+  }, [initialIsWishlisted]);
 
   if (!product) return null;
 
@@ -27,6 +38,31 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
         : Object.entries(product.specs).map(([key, value]) => ({ key, value })))
     : [];
   const originalPrice = product.original_price || product.price * 1.15;
+
+  const handleWishlistToggle = async () => {
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      setIsWishlistLoading(true);
+      if (isWishlisted) {
+        await wishlistService.removeFromWishlist(product.id, user.id);
+        setIsWishlisted(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await wishlistService.addToWishlist(product.id, user.id);
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -127,39 +163,7 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
               </p>
             </div>
 
-            {/* Seller Info */}
-            <div className="bg-secondary border border-border rounded-lg p-4 mb-6">
-              <p className="text-sm text-muted-foreground mb-2">Sold by</p>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">
-                    {product.seller_name || "Verified Seller"}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.sellerRating || 4.8)
-                            ? "text-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-1">
-                      {product.sellerRating || 4.8}
-                    </span>
-                  </div>
-                </div>
-                <Button variant="outline" className="border border-border">
-                  View Store
-                </Button>
-              </div>
-            </div>
+
 
             {/* Stock Status */}
             <div className="mb-6">
@@ -197,35 +201,56 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
                 </div>
               </div>
 
-              <Button 
-                onClick={() => {
-                  addToCart({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    quantity: quantity,
-                    image: images[0],
-                    brand: product.brand
-                  });
-                  toast.success(`${product.name} added to cart!`, {
-                    action: {
-                      label: "View Cart",
-                      onClick: () => router.push("/cart")
-                    }
-                  });
-                }}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg"
-              >
-                Add to Cart
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: quantity,
+                      image: images[0],
+                      brand: product.brand
+                    });
+                    toast.success(`${product.name} added to cart!`, {
+                      action: {
+                        label: "View Cart",
+                        onClick: () => router.push("/cart")
+                      }
+                    });
+                  }}
+                  variant="outline"
+                  className="flex-1 h-12 rounded-lg font-semibold text-lg border-border"
+                >
+                  Add to Cart
+                </Button>
+                <Button
+                  onClick={() => {
+                    clearCart();
+                    addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: quantity,
+                      image: images[0],
+                      brand: product.brand
+                    });
+                    router.push("/checkout");
+                  }}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-lg font-semibold text-lg"
+                >
+                  Buy Now
+                </Button>
+              </div>
 
               <Button
-                onClick={() => setIsWishlisted(!isWishlisted)}
+                onClick={handleWishlistToggle}
+                disabled={isWishlistLoading}
                 className={`w-full h-12 rounded-lg font-semibold text-lg transition-colors ${
                   isWishlisted
                     ? "bg-red-500/10 text-red-600 border border-red-500"
                     : "bg-secondary hover:bg-secondary/80 border border-border text-foreground"
-                }`}
+                } ${isWishlistLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isWishlisted ? "♥ Added to Wishlist" : "☆ Add to Wishlist"}
               </Button>
@@ -260,55 +285,12 @@ export function ProductDetailPage({ product }: ProductDetailPageProps) {
             <h2 className="text-2xl font-bold text-foreground mb-4">
               About this product
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              {product.description}
-            </p>
             <p className="text-muted-foreground leading-relaxed">
-              The Dell XPS 13 Plus is designed for professionals who demand the
-              best. With its sleek design, powerful performance, and stunning
-              display, it&apos;s perfect for everyday computing, content
-              creation, and professional work.
+              {product.description}
             </p>
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-foreground mb-6">
-              Customer Reviews
-            </h2>
-            <div className="space-y-6">
-              {[...Array(3)].map((_, idx) => (
-                <div
-                  key={idx}
-                  className="pb-6 border-b border-border last:border-0"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-foreground">John Doe</p>
-                      <div className="flex gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className="w-4 h-4 text-yellow-400"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      2 days ago
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Excellent laptop! Very fast, sleek design, and great battery
-                    life. Highly recommend for professionals.
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ReviewSection productId={product.id} />
         </div>
 
         {/* Sidebar */}

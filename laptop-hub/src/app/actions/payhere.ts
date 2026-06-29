@@ -13,7 +13,7 @@ export async function initializePayHerePayment(
     
     // 1. Create the order in the database
     // The trigger will automatically generate the payment_reference (ORD-YYYYMMDD-NNN)
-    const order = await OrderService.createOrder(supabase, orderData, cartItems);
+    const order = await OrderService.createOrder(orderData, cartItems, supabase);
 
     if (!order || !order.payment_reference) {
       throw new Error("Failed to generate order reference.");

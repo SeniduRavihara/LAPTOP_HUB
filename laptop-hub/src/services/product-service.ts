@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/client";
-import { withTimeout } from "@/lib/utils/timeout";
+import { supabase as browserClient } from "@/lib/supabase/client";
+import { SPEC_DEFINITIONS } from "@/components/admin/product-form/constants";
 
 export interface Product {
     id: string;
@@ -21,125 +21,296 @@ export type ProductInsert = Omit<Product, 'id' | 'created_at' | 'updated_at'>;
 export type ProductUpdate = Partial<ProductInsert>;
 
 export class ProductService {
-    static async getRecentProducts(supabase: any, limit: number = 8) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .select('*, auctions(status, starting_bid, end_time, bids(amount))')
-                    .order('created_at', { ascending: false })
-                    .limit(limit)
-                    .then(({ data, error }: any) => {
-                        if (error) throw error;
-                        return data;
-                    }),
-            60000,
-            'Request timed out. Please check your connection.'
-        );
+    /**
+     * Get recent products with auction data joined
+     */
+    static async getRecentProducts(limit: number = 8, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .select(`
+                    *,
+                    auctions (
+                        id,
+                        status,
+                        starting_bid,
+                        end_time,
+                        bids (
+                            amount
+                        )
+                    )
+                `)
+                .order('created_at', { ascending: false })
+                .limit(limit);
+            
+            if (error) throw error;
+            return data;
+        } catch (error: any) {
+            console.error('ProductService.getRecentProducts error details:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code,
+                error: error
+            });
+            throw error;
+        }
     }
 
-    static async getSellerProducts(supabase: any, sellerId: string) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .select('*, auctions(status)')
-                    .eq('seller_id', sellerId)
-                    .order('created_at', { ascending: false })
-                    .then(({ data, error }: any) => {
-                        if (error) throw error;
-                        return data;
-                    }),
-            60000,
-            'Request timed out.'
-        );
+    /**
+     * Advanced search with filters and Full-Text Search
+     */
+    static async searchProducts(filters: any, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            // Expand simplified processor names (e.g. "Intel Core i5") to specific options (e.g. "Intel Core i5-13500H")
+            let expandedProcessors = (filters?.processors && filters.processors.length > 0) ? filters.processors : null;
+            if (expandedProcessors) {
+                const allProcessorOptions = SPEC_DEFINITIONS.processor?.options || [];
+                const matchedOptions = allProcessorOptions.filter(opt =>
+                    expandedProcessors.some((sel: string) => opt.toLowerCase().includes(sel.toLowerCase()))
+                );
+                if (matchedOptions.length > 0) {
+                    expandedProcessors = matchedOptions;
+                }
+            }
+
+            // If a search query is provided, use the RPC function for hybrid search
+            if (filters?.query) {
+                const { data, error } = await supabase.rpc('search_products', {
+                    search_query: filters.query,
+                    filter_brands: (filters.brands && filters.brands.length > 0) ? filters.brands : null,
+                    min_price: filters.minPrice ? parseInt(filters.minPrice) : null,
+                    max_price: filters.maxPrice ? parseInt(filters.maxPrice) : null,
+                    filter_processors: expandedProcessors,
+                    filter_rams: (filters.rams && filters.rams.length > 0) ? filters.rams : null,
+                    filter_storages: (filters.storages && filters.storages.length > 0) ? filters.storages : null,
+                    filter_gpus: (filters.gpus && filters.gpus.length > 0) ? filters.gpus : null
+                });
+
+                if (error) throw error;
+
+                // Merge missing auction IDs from the database if the search_products RPC doesn't return them
+                if (data && data.length > 0) {
+                    const productsWithAuctions = data.filter((p: any) => {
+                        const auction = Array.isArray(p.auctions) ? p.auctions[0] : p.auctions;
+                        return auction && auction.status === 'active' && !auction.id;
+                    });
+
+                    if (productsWithAuctions.length > 0) {
+                        const productIds = productsWithAuctions.map((p: any) => p.id);
+                        const { data: realAuctions, error: auctionsError } = await supabase
+                            .from('auctions')
+                            .select('id, product_id, status, starting_bid, end_time')
+                            .in('product_id', productIds)
+                            .eq('status', 'active');
+
+                        if (!auctionsError && realAuctions) {
+                            const auctionMap = new Map(realAuctions.map((a: any) => [a.product_id, a]));
+                            for (const p of productsWithAuctions) {
+                                const realAuction = auctionMap.get(p.id) as any;
+                                if (realAuction) {
+                                    const origAuction = Array.isArray(p.auctions) ? p.auctions[0] : p.auctions;
+                                    const mergedAuction = { ...origAuction, id: realAuction.id };
+                                    p.auctions = Array.isArray(p.auctions) ? [mergedAuction] : mergedAuction;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return data;
+            }
+
+            // Fallback to standard filtering if no search query
+            let query = supabase
+                .from('products')
+                .select(`
+                    *,
+                    auctions (
+                        id,
+                        status,
+                        starting_bid,
+                        end_time,
+                        bids (
+                            amount
+                        )
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (filters?.brands && filters.brands.length > 0) {
+                query = query.in('brand', filters.brands);
+            }
+            if (filters?.minPrice) {
+                query = query.gte('price', parseInt(filters.minPrice));
+            }
+            if (filters?.maxPrice) {
+                query = query.lte('price', parseInt(filters.maxPrice));
+            }
+            if (expandedProcessors && expandedProcessors.length > 0) {
+                const formattedList = expandedProcessors.map((p: string) => `"${p}"`).join(',');
+                query = query.or(`specs->>processor.in.(${formattedList}),specs->>Processor.in.(${formattedList})`);
+            }
+            if (filters?.rams && filters.rams.length > 0) {
+                const formattedList = filters.rams.map((r: string) => `"${r}"`).join(',');
+                query = query.or(`specs->>ram.in.(${formattedList}),specs->>RAM.in.(${formattedList})`);
+            }
+            if (filters?.storages && filters.storages.length > 0) {
+                const formattedList = filters.storages.map((s: string) => `"${s}"`).join(',');
+                query = query.or(`specs->>storage.in.(${formattedList}),specs->>Storage.in.(${formattedList})`);
+            }
+            if (filters?.gpus && filters.gpus.length > 0) {
+                const formattedList = filters.gpus.map((g: string) => `"${g}"`).join(',');
+                query = query.or(`specs->>gpu.in.(${formattedList}),specs->>GPU.in.(${formattedList})`);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('ProductService.searchProducts error:', error);
+            throw error;
+        }
     }
 
-    static async getProductById(supabase: any, id: string) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .select('*, auction:auctions(*)')
-                    .eq('id', id)
-                    .single()
-                    .then(({ data, error }: any) => {
-                        if (error) throw error;
-                        return data;
-                    }),
-            60000,
-            'Request timed out.'
-        );
+    /**
+     * Get all products for a specific seller with optional filters
+     */
+    static async getSellerProducts(sellerId: string, filters?: { search?: string; type?: string }, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            let query = supabase
+                .from('products')
+                .select('*, auctions(id, status)')
+                .eq('seller_id', sellerId)
+                .order('created_at', { ascending: false });
+
+            if (filters?.search) {
+                query = query.or(`name.ilike.%${filters.search}%,brand.ilike.%${filters.search}%`);
+            }
+            
+            const { data: allProducts, error } = await query;
+            if (error) throw error;
+
+            // Filter by type (Auction/Standard)
+            if (filters?.type && filters.type !== "all") {
+                return allProducts?.filter((p: any) => {
+                    const isAuction = p.auctions && (Array.isArray(p.auctions) ? p.auctions.length > 0 : !!p.auctions);
+                    return filters.type === "auction" ? isAuction : !isAuction;
+                });
+            }
+
+            return allProducts;
+        } catch (error) {
+            console.error('ProductService.getSellerProducts error:', error);
+            throw error;
+        }
     }
 
-    static async createProduct(supabase: any, product: ProductInsert) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .insert(product)
-                    .select()
-                    .single()
-                    .then(({ data, error }: any) => {
-                        if (error) throw error;
-                        return data as Product;
-                    }),
-            60000,
-            'Saving product timed out. Please try again.'
-        );
+    /**
+     * Get a single product by ID
+     */
+    static async getProductById(id: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .select('*, auction:auctions(*)')
+                .eq('id', id)
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            // Handle row not found gracefully for details
+            if ((error as any)?.code === 'PGRST116') {
+                return null;
+            }
+            console.error('ProductService.getProductById error:', error);
+            throw error;
+        }
     }
 
-    static async updateProduct(supabase: any, id: string, product: ProductUpdate) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .update(product)
-                    .eq('id', id)
-                    .select()
-                    .single()
-                    .then(({ data, error }: any) => {
-                        if (error) throw error;
-                        return data as Product;
-                    }),
-            60000,
-            'Updating product timed out. Please try again.'
-        );
+ 
+    static async createProduct(product: ProductInsert, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .insert(product)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('ProductService.createProduct error:', error);
+            throw error;
+        }
     }
 
-    static async deleteProduct(supabase: any, id: string) {
-        return withTimeout(
-            () => supabase
-                    .from('products')
-                    .delete()
-                    .eq('id', id)
-                    .then(({ error }: any) => {
-                        if (error) throw error;
-                    }),
-            30000,
-            'Deletion timed out.'
-        );
+
+    static async updateProduct(id: string, updates: ProductUpdate, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error: any) {
+            console.error('ProductService.updateProduct error:', JSON.stringify(error, null, 2) || error);
+            throw error;
+        }
     }
 
-    static async uploadImage(supabase: any, file: File, userId: string): Promise<string> {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-        const filePath = `product-images/${fileName}`;
+ 
+    static async deleteProduct(id: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const { error } = await supabase
+                .from('products')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('ProductService.deleteProduct error:', error);
+            throw error;
+        }
+    }
 
-        const uploadResult = await withTimeout(
-            () => supabase.storage
+    /**
+     * Upload an image to Supabase Storage
+     */
+    static async uploadImage(file: File, userId: string, supabaseOverride?: any) {
+        const supabase = supabaseOverride || browserClient;
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
                 .from('product-images')
-                .upload(filePath, file, {
-                    contentType: file.type,
-                    cacheControl: '3600',
-                    upsert: false
-                }),
-            120000, // 120s for images
-            'Image upload timed out after 60 seconds.'
-        );
+                .upload(filePath, file);
 
-        const { error: uploadError } = uploadResult as any;
-        if (uploadError) throw uploadError;
+            if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath);
+            const { data } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(filePath);
 
-        return publicUrl;
+            return data.publicUrl;
+        } catch (error) {
+            console.error('ProductService.uploadImage error:', error);
+            throw error;
+        }
     }
 }

@@ -56,7 +56,8 @@ export default function PaymentPage() {
         customer_name: shippingInfo.fullName,
         customer_email: shippingInfo.email,
         total_amount: total,
-        status: "pending",
+        status: "confirmed",
+        payment_status: "paid",
         shipping_address: `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.postalCode}`,
         contact_phone: shippingInfo.phone,
       };

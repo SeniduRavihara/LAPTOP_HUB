@@ -1,24 +1,27 @@
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/server"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { ProductsClient } from "./products-client"
+import { AuthService } from "@/services/auth-service"
 
 export default async function ProductsPage() {
   const supabase = await createClient()
+  const user = await AuthService.getUser(supabase);
 
-  const { data: products } = await supabase
+  const { data: allProducts, error } = await supabase
     .from("products")
-    .select("*, auction:auctions(status)")
+    .select("*, auction:auctions(status), seller:users!products_seller_id_fkey(name)")
     .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("[ProductsPage] Error fetching data:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -32,51 +35,7 @@ export default async function ProductsPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-white">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Brand</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products?.map((product: any) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>{product.brand}</TableCell>
-                <TableCell>
-                  {product.auction && (Array.isArray(product.auction) ? product.auction.length > 0 : !!product.auction) ? (
-                    <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">Auction</Badge>
-                  ) : (
-                    <Badge variant="secondary">Standard</Badge>
-                  )}
-                </TableCell>
-                <TableCell>LKR {product.price.toLocaleString()}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/products/${product.id}/edit`}>
-                      Edit
-                    </Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {products?.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">
-                  No products found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <ProductsClient initialProducts={allProducts || []} adminId={user?.id} />
     </div>
   )
 }

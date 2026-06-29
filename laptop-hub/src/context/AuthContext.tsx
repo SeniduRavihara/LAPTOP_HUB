@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { Session, User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -29,17 +28,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     const setData = async () => {
       try {
-        const session: any = await AuthService.getSession(supabase)
+        const session: any = await AuthService.getSession()
         setSession(session)
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          const profile: any = await ProfileService.getUserProfile(supabase, session.user.id)
+          const profile: any = await ProfileService.getUserProfile(session.user.id)
           setRole(profile?.role ?? 'customer')
         } else {
           setRole(null)
@@ -51,12 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    const subscription = AuthService.onAuthStateChange(supabase, async (_event, session) => {
+    const { unsubscribe } = AuthService.onAuthStateChange(async (_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        const profile: any = await ProfileService.getUserProfile(supabase, session.user.id)
+        const profile: any = await ProfileService.getUserProfile(session.user.id)
         setRole(profile?.role ?? 'customer')
       } else {
         setRole(null)
@@ -68,13 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setData()
 
     return () => {
-      subscription.unsubscribe()
+      unsubscribe()
     }
-  }, [supabase, router])
+  }, [router])
 
   const signOut = async () => {
     try {
-      await AuthService.signOut(supabase)
+      await AuthService.signOut()
+      localStorage.removeItem('laptop_hub_cart')
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)

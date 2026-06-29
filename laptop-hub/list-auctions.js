@@ -2,24 +2,23 @@ const { createClient } = require("@supabase/supabase-js");
 require("dotenv").config({ path: ".env.local" });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function checkAuctions() {
-  console.log("Checking Auctions Table (Plain JS)...");
-  const { data: auctions, error: err } = await supabase
-    .from("auctions")
-    .select("*");
+async function deleteDuplicate() {
+  console.log("Deleting duplicate product...");
+  const { data, error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", "abf6102e-77c1-4c1f-a42f-1fcbd2193359")
+    .select();
 
-  if (err) {
-    console.error("Error fetching auctions:", err);
+  if (error) {
+    console.error("Error deleting product:", error);
     return;
   }
 
-  console.log(`Found ${auctions.length} total auctions.`);
-  auctions.forEach(a => {
-    console.log(`- ID: ${a.id}, Status: ${a.status}, EndTime: ${a.end_time}`);
-  });
+  console.log("Deleted product:", data);
 }
 
-checkAuctions();
+deleteDuplicate();

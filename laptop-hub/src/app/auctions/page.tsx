@@ -26,12 +26,28 @@ export default function AuctionsPage() {
     async function fetchAuctions() {
       setIsLoading(true);
       try {
-        const data = await AuctionService.getActiveAuctions(supabase);
+        const [{ data }, { data: { user } }] = await Promise.all([
+          AuctionService.getActiveAuctions(undefined, supabase).then(res => ({ data: res })),
+          supabase.auth.getUser()
+        ]);
+
+        let wishlistedProductIds = new Set<string>();
+        if (user) {
+          const { data: wishlistData } = await supabase
+            .from("wishlists")
+            .select("product_id")
+            .eq("user_id", user.id);
+            
+          if (wishlistData) {
+            wishlistedProductIds = new Set(wishlistData.map((item: any) => item.product_id));
+          }
+        }
 
         const formattedAuctions = (data || []).map((auction: any) => {
           const maxBid = (auction.bids || []).reduce((max: number, bid: any) => Math.max(max, bid.amount), 0);
           return {
             id: auction.id,
+            productId: auction.product_id,
             name: auction.products?.name || "Unknown Product",
             brand: auction.products?.brand || "Generic",
             image: auction.products?.images?.[0] || "/placeholder.svg",
@@ -39,7 +55,8 @@ export default function AuctionsPage() {
             numberOfBids: (auction.bids || []).length,
             endTime: auction.end_time,
             condition: auction.products?.specs?.Condition || "New",
-            seller: "TechStore_Pro", 
+            seller: "Verified Seller",
+            initialIsWatching: wishlistedProductIds.has(auction.product_id)
           };
         });
 

@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +12,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { AuthService } from "@/services/auth-service";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 const signupSchema = z
   .object({
@@ -43,7 +44,15 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const { user, role } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (role === "admin") router.push("/admin/dashboard");
+      else if (role === "seller") router.push("/seller/dashboard");
+      else router.push("/");
+    }
+  }, [user, role, router]);
 
   const {
     register,
@@ -70,7 +79,7 @@ export function SignupForm() {
     setLoading(true);
 
     try {
-      await AuthService.signUp(supabase, formData.email, formData.password, {
+      await AuthService.signUp(formData.email, formData.password, {
         name: formData.name,
         role: formData.role,
       });
@@ -91,7 +100,7 @@ export function SignupForm() {
 
   const handleGoogleSignup = async () => {
     try {
-      await AuthService.signInWithGoogle(supabase);
+      await AuthService.signInWithGoogle();
     } catch (error: any) {
       toast.error(error.message);
     }
