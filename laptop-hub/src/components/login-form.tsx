@@ -195,7 +195,7 @@ export function LoginForm() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      {/* <div className="grid grid-cols-3 gap-2">
         <Button
           type="button"
           variant="outline"
@@ -229,7 +229,7 @@ export function LoginForm() {
         >
           Customer
         </Button>
-      </div>
+      </div> */}
 
       <p className="text-center text-sm text-muted-foreground">
         Don't have an account?{" "}
